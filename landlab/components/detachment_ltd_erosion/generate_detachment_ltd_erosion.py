@@ -6,10 +6,10 @@ order, links to flow receiver and flow receiver fields. Instead, takes in
 the discharge values on NODES calculated by the OverlandFlow class and
 erodes the landscape in response to the output discharge.
 
-As of right now, this component relies on the OverlandFlow component
-for stability. There are no stability criteria implemented in this class.
+As of right now, this component relies on the OverlandFlow component 
+for stability. There are no stability criteria implemented in this class. 
 To ensure model stability, use StreamPowerEroder or FastscapeEroder
-components instead.
+components instead. 
 
 .. codeauthor:: Jordan Adams
 
@@ -58,7 +58,7 @@ run it. In this simple case, we need to pass it a time step ('dt')
 
 >>> dt = 10.0
 >>> dle = DetachmentLtdErosion(grid)
->>> dle.run_one_step(dt=dt)
+>>> dle.erode(dt=dt)
 
 After calculating the erosion rate, the elevation field is updated in the
 grid. Use the *output_var_names* property to see the names of the fields that
@@ -82,77 +82,63 @@ array([ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ,
         1.99955279,  1.99936754,  1.99936754,  1.99936754,  1.99955279,
         2.99968377,  2.99955279,  2.99955279,  2.99955279,  2.99968377])
 
-References
-----------
-**Required Software Citation(s) Specific to this Component**
-
-None Listed
-
-**Additional References**
-
-Howard, A. (1994). A detachment-limited model of drainage basin evolution. Water
-Resources Research  30(7), 2261-2285. https://dx.doi.org/10.1029/94wr00757
 """
 
-import numpy as np
-
 from landlab import Component
+import pylab
+import numpy as np
+from matplotlib import pyplot as plt
+from landlab.field.scalar_data_fields import FieldError
 
 
 class DetachmentLtdErosion(Component):
 
     """Landlab component that simulates detachment-limited river erosion.
 
-    This component calculates changes in elevation in response to
-    vertical incision.
+    This component calculates changes in elevation in response to vertical
+    incision.
     """
 
-    _name = "DetachmentLtdErosion"
+    _name = 'DetachmentLtdErosion'
 
-    _info = {
-        "surface_water__discharge": {
-            "dtype": float,
-            "intent": "in",
-            "optional": False,
-            "units": "m**3/s",
-            "mapping": "node",
-            "doc": "Volumetric discharge of surface water",
-        },
-        "topographic__elevation": {
-            "dtype": float,
-            "intent": "inout",
-            "optional": False,
-            "units": "m",
-            "mapping": "node",
-            "doc": "Land surface topographic elevation",
-        },
-        "topographic__slope": {
-            "dtype": float,
-            "intent": "in",
-            "optional": True,
-            "units": "-",
-            "mapping": "node",
-            "doc": "gradient of the ground surface",
-        },
+    _input_var_names = (
+        'topographic__elevation',
+        'topographic__slope',
+        'surface_water__discharge',
+    )
+
+    _output_var_names = (
+        'topographic__elevation',
+    )
+
+    _var_units = {
+        'topographic__elevation': 'm',
+        'topographic__slope': '-',
+        'surface_water__discharge': 'm^3/s',
     }
 
-    def __init__(
-        self,
-        grid,
-        K_sp=0.00002,
-        m_sp=0.5,
-        n_sp=1.0,
-        uplift_rate=0.0,
-        entrainment_threshold=0.0,
-        slope="topographic__slope",
-    ):
+    _var_mapping = {
+        'topographic__elevation': 'node',
+        'topographic__slope': 'node',
+        'surface_water__discharge': 'node',
+    }
+
+    _var_doc = {
+        'topographic__elevation': 'Land surface topographic elevation',
+        'topographic__slope': 'Slope of ',
+        'surface_water__discharge': 'node',
+    }
+
+    def __init__(self, grid, K_sp = 0.00002, m_sp = 0.5, n_sp = 1.0,
+                 uplift_rate = 0.0, entrainment_threshold = 0.0, **kwds):
         """Calculate detachment limited erosion rate on nodes.
 
         Landlab component that generalizes the detachment limited erosion
         equation, primarily to be coupled to the the Landlab OverlandFlow
         component.
 
-        This component adjusts topographic elevation.
+        This component adjusts topographic elevation and is contained in the
+        landlab.components.detachment_ltd_sed_trp folder.
 
         Parameters
         ----------
@@ -170,24 +156,22 @@ class DetachmentLtdErosion(Component):
             changes in topographic elevation due to tectonic uplift
         entrainment_threshold : float, optional
             threshold for sediment movement
-        slope : str
-            Field name of an at-node field that contains the slope.
         """
-        super(DetachmentLtdErosion, self).__init__(grid)
+        super(DetachmentLtdErosion, self).__init__(grid, **kwds)
 
-        assert slope in grid.at_node
+        self.K = K_sp
+        self.m = m_sp
+        self.n = n_sp
 
-        self._K = K_sp
-        self._m = m_sp
-        self._n = n_sp
+        self.I = self._grid.zeros(at='node')
+        self.uplift_rate = uplift_rate
+        self.entrainment_threshold = entrainment_threshold
 
-        self._I = self._grid.zeros(at="node")  # noqa: E741
-        self._uplift_rate = uplift_rate
-        self._entrainment_threshold = entrainment_threshold
+        self.dzdt = self._grid.zeros(at='node')
 
-        self._dzdt = self._grid.zeros(at="node")
-
-    def run_one_step(self, dt):
+    def erode(self, dt, elevs='topographic__elevation', 
+              discharge_cms='surface_water__discharge',
+              slope='topographic__slope'):
         """Erode into grid topography.
 
         For one time step, this erodes into the grid topography using
@@ -199,21 +183,30 @@ class DetachmentLtdErosion(Component):
         ----------
         dt : float
             Time step.
+        discharge_cms : str, optional
+            Name of the field that represents discharge on the nodes, if
+            from the de Almeida solution have units of cubic meters per second.
+        slope : str, optional
+            Name of the field that represent topographic slope on each node.
         """
+        try:
+            S = self._grid.at_node[slope]
+        except FieldError:
+            raise ValueError('missing field for slope')
 
-        S = self._grid.at_node["topographic__slope"]
-        Q = self._grid.at_node["surface_water__discharge"]
+        if type(discharge_cms) is str:
+            Q = self._grid.at_node[discharge_cms]
+        else:
+            Q = discharge_cms
 
-        Q_to_m = np.power(Q, self._m)
+        Q_to_m = np.power(Q, self.m)
 
-        S_to_n = np.power(S, self._n)
+        S_to_n = np.power(S, self.n)
 
-        self._I = (
-            self._K * Q_to_m * S_to_n
-        ) - self._entrainment_threshold  # noqa: E741
+        self.I = (self.K * Q_to_m * S_to_n) - self.entrainment_threshold
 
-        self._I[self._I < 0.0] = 0.0
+        self.I[self.I < 0.0] = 0.0
 
-        self._dz = (self._uplift_rate - self._I) * dt
+        self.dz = (self.uplift_rate - self.I) * dt
 
-        self._grid["node"]["topographic__elevation"] += self._dz
+        self._grid['node'][elevs] += self.dz

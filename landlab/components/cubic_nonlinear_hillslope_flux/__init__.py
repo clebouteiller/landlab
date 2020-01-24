@@ -1,0 +1,5 @@
+from .cubic_nonlinear_hillslope_flux import CubicNonLinearDiffuser
+from .spatially_variable_cubic_nonlinear_hillslope_flux import SpatiallyVariableCubicNonLinearDiffuser
+
+__all__ = ['CubicNonLinearDiffuser', 'SpatiallyVariableCubicNonLinearDiffuser']
+
