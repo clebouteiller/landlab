@@ -1,6 +1,7 @@
 from .chi_index import ChiFinder
 from .depression_finder import DepressionFinderAndRouter
 from .depth_dependent_diffusion import DepthDependentDiffuser
+from .depth_limited_linear_diffusion import DepthLimitedLinearDiffuser
 from .depth_dependent_taylor_soil_creep import DepthDependentTaylorDiffuser
 from .detachment_ltd_erosion import DepthSlopeProductErosion, DetachmentLtdErosion
 from .diffusion import LinearDiffuser
@@ -60,6 +61,7 @@ COMPONENTS = [
     ChiFinder,
     DepressionFinderAndRouter,
     DepthDependentDiffuser,
+    DepthLimitedLinearDiffuser,
     DepthDependentTaylorDiffuser,
     DepthSlopeProductErosion,
     DetachmentLtdErosion,
