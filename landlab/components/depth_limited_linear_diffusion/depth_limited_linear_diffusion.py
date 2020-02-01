@@ -28,6 +28,11 @@ class DepthLimitedLinearDiffuser(Component):
     Clipping the resulting soil depth to zero means that the amount of material 
     moved by diffusion during one time step is limited by the amount of soil 
     available (previously there + created by weathering during the time step)
+    
+    !!!! There is currently an issue with mass conservation when the soil 
+    production rate is small compared to the divergence of soil flux. Clipping 
+    negative depths means that not soil is removed where it is not available, 
+    but does not prevent soil to be deposited somewhere else. 
 
     """
 
