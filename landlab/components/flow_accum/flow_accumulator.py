@@ -25,6 +25,10 @@ from landlab.core.messages import warning_message
 from landlab.core.utils import as_id_array
 from landlab.utils.return_array import return_array_at_node
 
+from ..depression_finder.floodstatus import FloodStatus
+
+_UNFLOODED = FloodStatus._UNFLOODED
+
 
 class FlowAccumulator(Component):
 
@@ -158,6 +162,7 @@ class FlowAccumulator(Component):
 
     Third, we can import a FlowDirector component from Landlab and pass it to
     `flow_director`:
+
     >>> from landlab.components import FlowDirectorSteepest
     >>> fa = FlowAccumulator(
     ...      mg,
@@ -621,6 +626,8 @@ class FlowAccumulator(Component):
 
     _name = "FlowAccumulator"
 
+    _unit_agnostic = True
+
     _info = {
         "drainage_area": {
             "dtype": float,
@@ -688,7 +695,7 @@ class FlowAccumulator(Component):
         keyword arguments, tests the argument of runoff_rate, and
         initializes new fields.
         """
-        super(FlowAccumulator, self).__init__(grid)
+        super().__init__(grid)
         # Keep a local reference to the grid
 
         # Grid type testing
@@ -721,12 +728,7 @@ class FlowAccumulator(Component):
         self._node_cell_area = node_cell_area
 
         # STEP 2:
-        # identify Flow Director method, save name, import and initialize the correct
-        # flow director component if necessary
-        self._add_director(flow_director)
-        self._add_depression_finder(depression_finder)
-
-        # This component will track of the following variables.
+        # This component will track the following variables.
         # Attempt to create each, if they already exist, assign the existing
         # version to the local copy.
 
@@ -749,6 +751,13 @@ class FlowAccumulator(Component):
 
         self._D_structure = self._grid.BAD_INDEX * grid.ones(at="link", dtype=int)
         self._nodes_not_in_stack = True
+
+        # STEP 3:
+        # identify Flow Director method, save name, import and initialize the
+        # correct flow director component if necessary; same with
+        # lake/depression handler, if specified.
+        self._add_director(flow_director)
+        self._add_depression_finder(depression_finder)
 
         if len(self._kwargs) > 0:
             kwdstr = " ".join(list(self._kwargs.keys()))
@@ -897,10 +906,10 @@ class FlowAccumulator(Component):
                 flow_director = flow_director[12:]
 
             from landlab.components.flow_director import (
-                FlowDirectorSteepest,
                 FlowDirectorD8,
-                FlowDirectorMFD,
                 FlowDirectorDINF,
+                FlowDirectorMFD,
+                FlowDirectorSteepest,
             )
 
             DIRECTOR_METHODS = {
@@ -955,7 +964,7 @@ class FlowAccumulator(Component):
 
     def _add_depression_finder(self, depression_finder):
         """Test and add the depression finder component."""
-        PERMITTED_DEPRESSION_FINDERS = ["DepressionFinderAndRouter"]
+        PERMITTED_DEPRESSION_FINDERS = ["DepressionFinderAndRouter", "LakeMapperBarnes"]
 
         # now do a similar thing for the depression finder.
         self._depression_finder_provided = depression_finder
@@ -963,7 +972,19 @@ class FlowAccumulator(Component):
 
             # collect potential kwargs to pass to depression_finder
             # instantiation
-            potential_kwargs = ["routing"]
+            potential_kwargs = [
+                "routing",
+                "pits",
+                "reroute_flow",
+                "surface",
+                "method",
+                "fill_flat",
+                "fill_surface",
+                "redirect_flow_steepest_descent",
+                "reaccumulate_flow",
+                "ignore_overfill",
+                "track_lakes",
+            ]
             kw = {}
             for p_k in potential_kwargs:
                 if p_k in self._kwargs.keys():
@@ -979,35 +1000,19 @@ class FlowAccumulator(Component):
                 )
                 raise NotImplementedError(msg)
 
-            # if D4 is being used here and should be.
-            if (
-                (("routing" not in kw) or (kw["routing"] != "D4"))
-                and isinstance(self._grid, RasterModelGrid)
-                and (self._flow_director._name in ("FlowDirectorSteepest"))
-            ):
-
-                message = (
-                    "You have specified \n"
-                    "flow_director=FlowDirectorSteepest and\n"
-                    "depression_finder=DepressionFinderAndRouter\n"
-                    "in the instantiation of FlowAccumulator on a "
-                    "RasterModelGrid. The default behavior of "
-                    "DepressionFinderAndRouter is to use D8 connectivity "
-                    "which is in conflict with D4 connectivity used by "
-                    "FlowDirectorSteepest. \n"
-                    "To fix this, provide the kwarg routing='D4', when "
-                    "you instantiate FlowAccumulator."
-                )
-
-                raise ValueError(warning_message(message))
-
             # depression finder is provided as a string.
             if isinstance(self._depression_finder_provided, str):
 
-                from landlab.components import DepressionFinderAndRouter
+                from landlab.components.depression_finder.lake_mapper import (
+                    DepressionFinderAndRouter,
+                )
+                from landlab.components.lake_fill.lake_fill_barnes import (
+                    LakeMapperBarnes,
+                )
 
                 DEPRESSION_METHODS = {
-                    "DepressionFinderAndRouter": DepressionFinderAndRouter
+                    "DepressionFinderAndRouter": DepressionFinderAndRouter,
+                    "LakeMapperBarnes": LakeMapperBarnes,
                 }
 
                 try:
@@ -1062,22 +1067,102 @@ class FlowAccumulator(Component):
                         "components are valid imputs:\n"
                         + str(PERMITTED_DEPRESSION_FINDERS)
                     )
+
+            # Make sure direction methods are consistent between the director
+            # and the depression handler
+            if isinstance(self._grid, RasterModelGrid):
+                flow_director_method = self.flow_director_raster_method()
+                depression_finder_method = (
+                    self.depression_handler_raster_direction_method()
+                )
+                if flow_director_method != depression_finder_method:
+                    message = (
+                        "Incompatibility between flow-director routing method\n"
+                        + "which is "
+                        + flow_director_method
+                        + ", and depression-handler method,\n"
+                        + "which is "
+                        + depression_finder_method
+                    )
+                    raise ValueError(warning_message(message))
         else:
             self._depression_finder = None
 
-    def accumulate_flow(self, update_flow_director=True):
+    def flow_director_raster_method(self):
+        """Return 'D8' or 'D4' depending on the direction method used.
+
+        (Note: only call this function for a raster gird;
+        does not handle multiple-flow directors)
+        """
+        assert isinstance(self._grid, RasterModelGrid)
+        if self._flow_director._name in ("FlowDirectorD8"):
+            return "D8"
+        else:
+            return "D4"
+
+    def depression_handler_raster_direction_method(self):
+        """Return 'D8' or 'D4' depending on the direction method used.
+
+        (Note: only call this function for a raster gird;
+        does not handle multiple-flow directors)
+        """
+        assert isinstance(self._grid, RasterModelGrid)
+        if self._depression_finder._name in ("DepressionFinderAndRouter"):
+            return self._depression_finder._routing
+        elif self._depression_finder._name in ("LakeMapperBarnes"):
+            if (
+                self._depression_finder._allneighbors.size
+                > self.grid.adjacent_nodes_at_node.size
+            ):
+                return "D8"
+            else:
+                return "D4"
+        else:
+            raise ValueError("Depression finder type not recognized.")
+
+    def pits_present(self):
+        return np.any(self._grid.at_node["flow__sink_flag"][self._grid.core_nodes])
+
+    def flooded_nodes_present(self):
+        # flooded node status may not exist if no depression finder was used.
+        if "flood_status_code" in self._grid.at_node:
+            return np.all(self._grid.at_node["flood_status_code"] == _UNFLOODED)
+        else:
+            return False
+
+    def accumulate_flow(self, update_flow_director=True, update_depression_finder=True):
         """Function to make FlowAccumulator calculate drainage area and
         discharge.
 
-        Running run_one_step() results in the following to occur:
+        Running accumulate_flow() results in the following to occur:
+
             1. Flow directions are updated (unless update_flow_director is set
-            as False).
-            2. Intermediate steps that analyse the drainage network topology
-            and create datastructures for efficient drainage area and discharge
-            calculations.
-            3. Calculation of drainage area and discharge.
-            4. Depression finding and mapping, which updates drainage area and
-            discharge.
+               as False). This incluldes checking for updated boundary
+               conditions.
+            2. The depression finder, if present is updated (unless
+               update_depression_finder is set as False).
+            3. Intermediate steps that analyse the drainage network topology
+               and create datastructures for efficient drainage area and
+               discharge calculations.
+            4. Calculation of drainage area and discharge.
+            5. Return of drainage area and discharge.
+
+        Parameters
+        ----------
+        update_flow_director : optional, bool
+            Whether to update the flow director. Default is True.
+        update_depression_finder : optional, bool
+            Whether to update the depression finder, if present.
+            Default is True.
+
+        Returns
+        -------
+        drainage_area : array
+            At node array which points to the field
+            grid.at_node["drainage_area"].
+        surface_water__discharge
+            At node array which points to the field
+            grid.at_node["surface_water__discharge"].
         """
         # set a couple of aliases
         a = self._grid["node"]["drainage_area"]
@@ -1100,23 +1185,27 @@ class FlowAccumulator(Component):
             # At the moment, no depression finders work with to-many, so it
             # lives here
             if self._depression_finder_provided is not None:
-                self._depression_finder.map_depressions()
+                if update_depression_finder:
+                    # only update depression finder if requested AND if there
+                    # are pits, or there were flooded nodes from last timestep.
+                    if self.pits_present or self.flooded_nodes_present:
+                        self._depression_finder.update()
 
-                # if FlowDirectorSteepest is used, update the link directions
-                if self._flow_director._name == "FlowDirectorSteepest":
-                    self._flow_director._determine_link_directions()
+                    # if FlowDirectorSteepest is used, update the link directions
+                    if self._flow_director._name == "FlowDirectorSteepest":
+                        self._flow_director._determine_link_directions()
 
             # step 3. Stack, D, delta construction
             nd = as_id_array(flow_accum_bw._make_number_of_donors_array(r))
             delta = as_id_array(flow_accum_bw._make_delta_array(nd))
             D = as_id_array(flow_accum_bw._make_array_of_donors(r, delta))
-            s = as_id_array(flow_accum_bw.make_ordered_node_array(r))
+            s = as_id_array(flow_accum_bw.make_ordered_node_array(r, nd, delta, D))
 
             # put these in grid so that depression finder can use it.
             # store the generated data in the grid
-            self._grid.at_node["flow__data_structure_delta"][:] = delta[1:]
-            self._D_structure = D
-            self._grid.at_node["flow__upstream_node_order"][:] = s
+            self._grid.at_node["flow__data_structure_delta"][:] = as_id_array(delta[1:])
+            self._D_structure = as_id_array(D)
+            self._grid.at_node["flow__upstream_node_order"][:] = as_id_array(s)
 
             # step 4. Accumulate (to one or to N depending on direction method)
             a[:], q[:] = self._accumulate_A_Q_to_one(s, r)
@@ -1129,7 +1218,9 @@ class FlowAccumulator(Component):
             nd = as_id_array(flow_accum_to_n._make_number_of_donors_array_to_n(r, p))
             delta = as_id_array(flow_accum_to_n._make_delta_array_to_n(nd))
             D = as_id_array(flow_accum_to_n._make_array_of_donors_to_n(r, p, delta))
-            s = as_id_array(flow_accum_to_n.make_ordered_node_array_to_n(r, p))
+            s = as_id_array(
+                flow_accum_to_n.make_ordered_node_array_to_n(r, p, nd, delta, D)
+            )
 
             # put theese in grid so that depression finder can use it.
             # store the generated data in the grid
@@ -1167,13 +1258,19 @@ class FlowAccumulator(Component):
     def run_one_step(self):
         """Accumulate flow and save to the model grid.
 
-        run_one_step() checks for updated boundary conditions, calculates
-        slopes on links, finds baselevel nodes based on the status at node,
-        calculates flow directions, and accumulates flow and saves results to
-        the grid.
+        1. Flow directions are updated. This incluldes checking for updated
+           boundary conditions.
+        2. The depression finder, if present is updated.
+        3. Intermediate steps that analyse the drainage network topology
+           and create datastructures for efficient drainage area and
+           discharge calculations.
+        4. Calculation of drainage area and discharge.
+        5. Return of drainage area and discharge.
 
         An alternative to run_one_step() is accumulate_flow() which does the
         same things but also returns the drainage area and discharge.
+        accumulate_flow() additionally provides the ability to turn off updating
+        the flow director or the depression finder.
         """
         self.accumulate_flow()
 

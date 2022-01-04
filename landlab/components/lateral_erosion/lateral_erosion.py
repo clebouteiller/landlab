@@ -164,6 +164,8 @@ class LateralEroder(Component):
 
     _name = "LateralEroder"
 
+    _unit_agnostic = False
+
     _cite_as = """
     @article{langston2018developing,
       author = {Langston, A. L. and Tucker, G. E.},
@@ -290,7 +292,7 @@ class LateralEroder(Component):
             must be passed. It will be run within sub-timesteps in order to update
             the flow directions and drainage area.
         """
-        super(LateralEroder, self).__init__(grid)
+        super().__init__(grid)
 
         assert isinstance(
             grid, RasterModelGrid
@@ -416,6 +418,7 @@ class LateralEroder(Component):
         vol_lat = self._grid.at_node["volume__lateral_erosion"]
         kw = 10.0
         F = 0.02
+
         # May 2, runoff calculated below (in m/s) is important for calculating
         # discharge and water depth correctly. renamed runoffms to prevent
         # confusion with other uses of runoff
@@ -429,6 +432,12 @@ class LateralEroder(Component):
         lat_nodes = np.zeros(grid.number_of_nodes, dtype=int)
         dzver = np.zeros(grid.number_of_nodes)
         vol_lat_dt = np.zeros(grid.number_of_nodes)
+
+        # dz_lat needs to be reset. Otherwise, once a lateral node erode's once, it will continue eroding
+        # at every subsequent time setp. If you want to track all lateral erosion, create another attribute,
+        # or add self.dzlat to itself after each time step.
+        self._dzlat.fill(0.0)
+
         if inlet_on is True:
             inlet_node = self._inlet_node
             qsinlet = self._qsinlet
@@ -550,6 +559,11 @@ class LateralEroder(Component):
         lat_nodes = np.zeros(grid.number_of_nodes, dtype=int)
         dzver = np.zeros(grid.number_of_nodes)
         vol_lat_dt = np.zeros(grid.number_of_nodes)
+
+        # dz_lat needs to be reset. Otherwise, once a lateral node erode's once, it will continue eroding
+        # at every subsequent time setp. If you want to track all lateral erosion, create another attribute,
+        # or add self.dzlat to itself after each time step.
+        self._dzlat.fill(0.0)
 
         if inlet_on is True:
             # define inlet_node

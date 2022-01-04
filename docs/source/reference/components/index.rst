@@ -31,6 +31,7 @@ Fluvial geomorphology
    detachment_ltd_erosion
    erosion_deposition
    space
+   network_sediment_transporter
 
 Flow routing
 ------------
@@ -51,6 +52,7 @@ Shallow water hydrodynamics
    :maxdepth: 2
 
    overland_flow
+   tidal_flow
 
 Land surface hydrology
 ----------------------
@@ -113,6 +115,22 @@ Weathering
 
   weathering
 
+Subaqueous / Submarine Processes
+--------------------------------
+
+.. toctree::
+  :maxdepth: 2
+
+  marine_sediment_transport
+
+Tectonics
+---------
+
+.. toctree::
+  :maxdepth: 2
+
+  tectonics
+
 Terrain Analysis
 ----------------
 
@@ -124,7 +142,9 @@ Terrain Analysis
   drainage_density
   profile
   channel_profiler
+  trickle_down_profiler
   hack_calculator
+  hand_calculator
 
 Tectonics
 ---------
@@ -200,6 +220,7 @@ Alphabetical Listing of Modules
    gflex
    groundwater
    hack_calculator
+   hand_calculator
    lake_fill
    landslides
    lateral_erosion

@@ -9,6 +9,7 @@
 import numpy as np
 
 from landlab import Component, LinkStatus
+from landlab.core.messages import deprecation_message
 
 
 class DepthDependentTaylorDiffuser(Component):
@@ -24,14 +25,16 @@ class DepthDependentTaylorDiffuser(Component):
 
     .. math::
 
-        q_s = DSH^* ( 1 + (S/S_c)^2 + (S/Sc_)^4 + .. + (S/S_c)^2(n-1) ) (1.0 - exp( H / H^*)
+        q_s = - K H_* \nabla \eta ( 1 + (S/S_c)^2 + (S/S_c)^4 + .. + (S/S_c)^2(n-1) ) (1 - exp( - H / H_*)
 
-    where :math:`D` is is the diffusivity, :math:`S` is the slope, :math:`S_c`
-    is the critical slope, :math:`n` is the number of terms, :math:`H` is the
-    soil depth on links, and :math:`H^*` is the soil transport decay depth.
+    where :math:`K` is a transport velocity coefficient, :math:`\eta` is land
+    surface elevation, :math:`S` is the slope gradient (defined as
+    positive downward), :math:`S_c` is the critical slope, :math:`n` is the
+    number of terms, :math:`H` is the soil depth on links, and :math:`H_*` is
+    the soil transport decay depth.
 
     The default behavior uses two terms to produce a slope dependence as
-    described by Equation 6 of Ganti et al., (2012).
+    described by Equation 6 of Ganti et al. (2012).
 
     This component will ignore soil thickness located at non-core nodes.
 
@@ -216,11 +219,13 @@ class DepthDependentTaylorDiffuser(Component):
 
     Johnstone, S., Hilley, G. (2015). Lithologic control on the form of
     soil-mantled hillslopes Geology  43(1), 83-86.
-    https://dx.doi.org/10.1130/g36052.1
+    https://doi.org/10.1130/G36052.1
 
     """
 
     _name = "DepthDependentTaylorDiffuser"
+
+    _unit_agnostic = True
 
     _cite_as = """
     @article{barnhart2019terrain,
@@ -289,13 +294,14 @@ class DepthDependentTaylorDiffuser(Component):
     def __init__(
         self,
         grid,
-        linear_diffusivity=1.0,
+        linear_diffusivity=None,
         slope_crit=1.0,
         soil_transport_decay_depth=1.0,
         nterms=2,
         dynamic_dt=False,
         if_unstable="pass",
         courant_factor=0.2,
+        soil_transport_velocity=1.0,
     ):
         """Initialize the DepthDependentTaylorDiffuser.
 
@@ -303,8 +309,8 @@ class DepthDependentTaylorDiffuser(Component):
         ----------
         grid: ModelGrid
             Landlab ModelGrid object
-        linear_diffusivity: float, optional.
-            Hillslope diffusivity, m**2/yr
+        linear_diffusivity: float, optional, DEPRECATED
+            Hillslope diffusivity / decay depth, m/yr
             Default = 1.0
         slope_crit: float, optional
             Critical gradient parameter, m/m
@@ -316,18 +322,30 @@ class DepthDependentTaylorDiffuser(Component):
             number of terms in the Taylor expansion.
             Two terms (default) gives the behavior
             described in Ganti et al. (2012).
-        dynamic_dt : bool
+        dynamic_dt : bool, optional, default  = False
             Whether internal timestepping is used.
-        if_unstable : str
+        if_unstable : str, optional, default = "pass"
             What to do if unstable (options are "pass",
             "raise", "warn")
-        courant_factor : float
+        courant_factor : float, optional, default = 0.2
             Courant factor for timestep calculation.
+        soil_transport_velocity : float, optional, default = 1.0
+            Velocity parameter for soil transport, m/yr. Diffusivity is the
+            product of this parameter and soil_transport_decay_depth.
         """
-        super(DepthDependentTaylorDiffuser, self).__init__(grid)
-        # Store grid and parameters
+        super().__init__(grid)
 
-        self._K = linear_diffusivity
+        # Handle now-deprecated diffusivity argument
+        if linear_diffusivity is None:
+            self._K = soil_transport_velocity
+        else:
+            message = """Use of linear_diffusivity is deprecated, because the
+                         name is misleading: it is actually a velocity;
+                         diffusivity is obtained by multiplying by soil
+                         transport decay depth. Use soil_transport_velocity
+                         instead."""
+            print(deprecation_message(message))
+            self._K = linear_diffusivity
         self._soil_transport_decay_depth = soil_transport_decay_depth
         self._slope_crit = slope_crit
         self._nterms = nterms
@@ -336,29 +354,16 @@ class DepthDependentTaylorDiffuser(Component):
         self._if_unstable = if_unstable
         self._courant_factor = courant_factor
 
-        # create fields
-        # elevation
+        # get reference to inputs
         self._elev = self._grid.at_node["topographic__elevation"]
         self._soil_prod_rate = self._grid.at_node["soil_production__rate"]
         self._depth = self._grid.at_node["soil__depth"]
 
-        # slope
-        if "topographic__slope" in self._grid.at_link:
-            self._slope = self._grid.at_link["topographic__slope"]
-        else:
-            self._slope = self._grid.add_zeros("link", "topographic__slope")
-
-        # soil flux
-        if "soil__flux" in self._grid.at_link:
-            self._flux = self._grid.at_link["soil__flux"]
-        else:
-            self._flux = self._grid.add_zeros("link", "soil__flux")
-
-        # bedrock elevation
-        if "bedrock__elevation" in self._grid.at_node:
-            self._bedrock = self._grid.at_node["bedrock__elevation"]
-        else:
-            self._bedrock = self._grid.add_zeros("node", "bedrock__elevation")
+        # create outputs if necessary and get reference.
+        self.initialize_output_fields()
+        self._slope = self._grid.at_link["topographic__slope"]
+        self._flux = self._grid.at_link["soil__flux"]
+        self._bedrock = self._grid.at_node["bedrock__elevation"]
 
     def soilflux(self, dt):
         """Calculate soil flux for a time period 'dt'.

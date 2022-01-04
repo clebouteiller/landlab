@@ -8,6 +8,7 @@ files `docs/text_for_[gridfile].py.txt`.
 """
 
 import numpy
+import xarray as xr
 
 from ..core.utils import as_id_array
 from ..graph import DualHexGraph
@@ -130,6 +131,33 @@ class HexModelGrid(DualHexGraph, ModelGrid):
         args = (kwds.pop("shape"),)
         return cls(*args, **kwds)
 
+    @classmethod
+    def from_dataset(cls, dataset):
+        return cls(
+            tuple(dataset["shape"].values),
+            spacing=dataset["spacing"],
+            xy_of_lower_left=dataset["xy_of_lower_left"],
+            orientation=dataset.attrs["orientation"],
+            node_layout=dataset.attrs["node_layout"],
+        )
+
+    def as_dataset(self, include="*", exclude=None):
+        dataset = xr.Dataset(
+            {
+                "shape": (("dim",), list(self.shape)),
+                "spacing": self.spacing,
+                "xy_of_lower_left": (("dim",), list(self.xy_of_lower_left)),
+            },
+            attrs={
+                "grid_type": "triangular",
+                "node_layout": self.node_layout,
+                "orientation": self.orientation,
+            },
+        )
+        return dataset.update(
+            super(HexModelGrid, self).as_dataset(include=include, exclude=exclude)
+        )
+
     @property
     def xy_of_lower_left(self):
         """Return (x, y) of the reference point."""
@@ -245,10 +273,10 @@ class HexModelGrid(DualHexGraph, ModelGrid):
         stores a handle to the current plotting axis. Both of these are then
         used by hexplot().
         """
-        from numpy import array, sqrt, zeros
         import matplotlib
-        from matplotlib.patches import Polygon
         from matplotlib.collections import PatchCollection
+        from matplotlib.patches import Polygon
+        from numpy import array, sqrt, zeros
 
         # color
         if color_map is None:
@@ -325,9 +353,10 @@ class HexModelGrid(DualHexGraph, ModelGrid):
 
         LLCATS: GINF
         """
-        from numpy import array, amin, amax
-        import matplotlib.pyplot as plt
         import copy
+
+        import matplotlib.pyplot as plt
+        from numpy import amax, amin, array
 
         try:
             self._hexplot_configured

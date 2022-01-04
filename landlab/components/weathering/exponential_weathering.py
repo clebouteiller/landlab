@@ -27,6 +27,10 @@ class ExponentialWeatherer(Component):
 
     The `ExponentialWeatherer` only calculates soil production at core nodes.
 
+    An alternative version which uses the analytical integral of
+    production through time is available at the component
+    :py:class:`ExponentialWeathererIntegrated <landlab.components.ExponentialWeathererIntegrated>`.
+
     Examples
     --------
     >>> import numpy as np
@@ -61,6 +65,8 @@ class ExponentialWeatherer(Component):
     """
 
     _name = "ExponentialWeatherer"
+
+    _unit_agnostic = True
 
     _cite_as = """
     @article{barnhart2019terrain,
@@ -103,11 +109,11 @@ class ExponentialWeatherer(Component):
         grid: ModelGrid
             Landlab ModelGrid object
         soil_production__maximum_rate : float
-            Characteristic weathering depth
-        soil_production__decay_depth : float
             Maximum weathering rate for bare bedrock
+        soil_production__decay_depth : float
+            Characteristic weathering depth
         """
-        super(ExponentialWeatherer, self).__init__(grid)
+        super().__init__(grid)
 
         # Store grid and parameters
 
@@ -140,3 +146,14 @@ class ExponentialWeatherer(Component):
             Used only for compatibility with standard run_one_step.
         """
         self.calc_soil_prod_rate()
+
+    @property
+    def maximum_weathering_rate(self):
+        """Maximum rate of weathering (m/yr)."""
+        return self._w0
+
+    @maximum_weathering_rate.setter
+    def maximum_weathering_rate(self, new_val):
+        if new_val <= 0:
+            raise ValueError("Maximum weathering rate must be positive.")
+        self._w0 = new_val
