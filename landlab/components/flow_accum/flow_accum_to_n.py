@@ -12,9 +12,8 @@ Algorithm constructs drainage area and (optionally) water discharge. Can
 handle the case in which each node has more than one downstream receiver.
 
 Computationally, for a grid of the same size this algorithm will take about
-
-    1.5 x (avg number of downstream nodes per cell)
-        x (duration of flow_accum_bw for same grid using route-to-one method)
+    1.5*(avg number of downstream nodes per cell)
+        *(duration of flow_accum_bw for same grid using route-to-one method)
 
 So under route-to-one direction schemes, using the Braun and Willet method is
 recommended.
@@ -22,7 +21,7 @@ recommended.
 If water discharge is calculated, the result assumes steady flow (that is,
 hydrologic equilibrium).
 
-The main public function is::
+The main public function is:
 
     a, q, s = flow_accumulation_to_n(r, p)
 
@@ -79,11 +78,11 @@ class _DrainageStack_to_n:
         self.delta = delta
         self.D = D
 
-    def construct__stack(self, nodes):
+    def construct__stack(self, l):
         """Function to construct the drainage stack.
 
         Function to add all nodes upstream of a set of base level nodes given
-        by list *nodes* in an order
+        by list l in an order
         such that downstream nodes always occur before upstream nodes.
 
         This function contains the major algorithmic difference between the
@@ -133,9 +132,9 @@ class _DrainageStack_to_n:
         """
         # create base nodes set
         try:
-            base = set(nodes)
+            base = set(l)
         except TypeError:
-            base = set([nodes])
+            base = set([l])
 
         # instantiate the time keeping variable i, and a variable to keep track
         # of the visit time. Using visit time allows us to itterate through
@@ -286,6 +285,7 @@ def _make_delta_array_to_n(nd):
 
     Examples
     --------
+
     >>> import numpy as np
     >>> from landlab.components.flow_accum.flow_accum_to_n import(
     ... _make_delta_array_to_n)
@@ -360,9 +360,7 @@ def _make_array_of_donors_to_n(r, p, delta):
     return D
 
 
-def make_ordered_node_array_to_n(
-    receiver_nodes, receiver_proportion, nd=None, delta=None, D=None
-):
+def make_ordered_node_array_to_n(receiver_nodes, receiver_proportion):
 
     """Create an array of node IDs.
 
@@ -413,12 +411,9 @@ def make_ordered_node_array_to_n(
     """
     node_id = numpy.arange(receiver_nodes.shape[0])
     baselevel_nodes = numpy.where(node_id == receiver_nodes[:, 0])[0]
-    if nd is None:
-        nd = _make_number_of_donors_array_to_n(receiver_nodes, receiver_proportion)
-    if delta is None:
-        delta = _make_delta_array_to_n(nd)
-    if D is None:
-        D = _make_array_of_donors_to_n(receiver_nodes, receiver_proportion, delta)
+    nd = _make_number_of_donors_array_to_n(receiver_nodes, receiver_proportion)
+    delta = _make_delta_array_to_n(nd)
+    D = _make_array_of_donors_to_n(receiver_nodes, receiver_proportion, delta)
 
     num_receivers = numpy.sum(receiver_nodes >= 0, axis=1)
 
@@ -533,15 +528,7 @@ def find_drainage_area_and_discharge_to_n(
 
 
 def find_drainage_area_and_discharge_to_n_lossy(
-    s,
-    r,
-    link_to_receiver,
-    p,
-    loss_function,
-    grid,
-    node_cell_area=1.0,
-    runoff=1.0,
-    boundary_nodes=None,
+    s, r, l, p, loss_function, grid, node_cell_area=1.0, runoff=1.0, boundary_nodes=None
 ):
 
     """Calculate the drainage area and water discharge at each node, permitting
@@ -557,7 +544,7 @@ def find_drainage_area_and_discharge_to_n_lossy(
         Ordered (downstream to upstream) array of node IDs
     r : ndarray size (np, q) where r[i, :] gives all receivers of node i. Each
         node receives flow fom up to q donors.
-    link_to_receiver : ndarray size (np, q) where l[i, :] gives all links to receivers of
+    l : ndarray size (np, q) where l[i, :] gives all links to receivers of
         node i.
     p : ndarray size (np, q) where p[i, v] give the proportion of flow going
         from node i to the receiver listed in r[i, v].
@@ -673,7 +660,7 @@ def find_drainage_area_and_discharge_to_n_lossy(
         donor = s[i]
         for v in range(q):
             recvr = r[donor, v]
-            lrec = link_to_receiver[donor, v]
+            lrec = l[donor, v]
             proportion = p[donor, v]
             if proportion > 0:
                 if donor != recvr:

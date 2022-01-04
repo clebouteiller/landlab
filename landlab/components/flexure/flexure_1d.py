@@ -144,8 +144,6 @@ class Flexure1D(Component):
 
     _name = "1D Flexure Equation"
 
-    _unit_agnostic = True
-
     _info = {
         "lithosphere__increment_of_overlying_pressure": {
             "dtype": float,
@@ -203,7 +201,7 @@ class Flexure1D(Component):
         if method not in ("airy", "flexure"):
             raise ValueError("{method}: method not understood".format(method=method))
 
-        super().__init__(grid)
+        super(Flexure1D, self).__init__(grid)
 
         self._method = method
         self.youngs = youngs
@@ -414,7 +412,7 @@ class Flexure1D(Component):
             Deflections caused by the loading.
         """
         if out is None:
-            out = np.zeros_like(loads, dtype=float)
+            out = np.zeros_like(loads, dtype=np.float)
 
         loads = loads.reshape((-1, loads.shape[-1]))
         dz = out[..., :].reshape((-1, out.shape[-1]))

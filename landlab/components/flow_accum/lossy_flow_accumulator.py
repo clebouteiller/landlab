@@ -72,6 +72,10 @@ class LossyFlowAccumulator(FlowAccumulator):
 
     The primary method of this class is :func:`run_one_step`.
 
+    `run_one_step` takes the optional argument update_flow_director (default is
+    True) that determines if the flow_director is re-run before flow is
+    accumulated.
+
     Examples
     --------
     These examples pertain only to the LossyFlowAccumulator. See the main
@@ -365,7 +369,7 @@ class LossyFlowAccumulator(FlowAccumulator):
                 "node", "surface_water__discharge_loss", dtype=float, clobber=True
             )
 
-        super().__init__(
+        super(LossyFlowAccumulator, self).__init__(
             grid,
             surface=surface,
             flow_director=flow_director,

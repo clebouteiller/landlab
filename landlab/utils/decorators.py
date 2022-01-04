@@ -20,6 +20,11 @@ import numpy as np
 
 from landlab import FieldError
 
+try:
+    from inspect import getfullargspec
+except ImportError:
+    from inspect import getargspec as getfullargspec
+
 
 class cache_result_in_object(object):
     def __init__(self, cache_as=None):
@@ -130,11 +135,12 @@ def add_signature_to_doc(func):
     <BLANKLINE>
     Do something.
     """
+    argspec = getfullargspec(func)
     return """{name}{argspec}
 
 {body}""".format(
         name=func.__name__,
-        argspec=str(inspect.signature(func)),
+        argspec=inspect.formatargspec(*argspec),
         body=inspect.getdoc(func),
     )
 

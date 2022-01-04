@@ -32,7 +32,6 @@ name: lithosphere__overlying_pressure_increment
 description:
   Applied pressure to the lithosphere over a time step
 units: Pa
-unit agnostic: True
 at: node
 intent: in
 
@@ -137,8 +136,6 @@ class Flexure(Component):
 
     _name = "Flexure"
 
-    _unit_agnostic = True
-
     _cite_as = r"""@article{hutton2008sedflux,
         title={Sedflux 2.0: An advanced process-response model that generates three-dimensional stratigraphy},
         author={Hutton, Eric WH and Syvitski, James PM},
@@ -201,7 +198,7 @@ class Flexure(Component):
         if method not in ("airy", "flexure"):
             raise ValueError("{method}: method not understood".format(method=method))
 
-        super().__init__(grid)
+        super(Flexure, self).__init__(grid)
 
         self._youngs = youngs
         self._method = method
@@ -302,7 +299,7 @@ class Flexure(Component):
             Deflections caused by the loading.
         """
         if out is None:
-            out = np.zeros(self._grid.shape, dtype=float)
+            out = np.zeros(self._grid.shape, dtype=np.float)
         dz = out.reshape(self._grid.shape)
         load = loads.reshape(self._grid.shape)
 

@@ -460,12 +460,6 @@ class StructuredQuadGraphTopology:
 
     @property
     @lru_cache()
-    @read_only_array
-    def nodes_at_link(self):
-        return self._layout.nodes_at_link(self.shape)
-
-    @property
-    @lru_cache()
     def horizontal_links(self):
         return self._layout.horizontal_links(self.shape)
 
@@ -477,9 +471,7 @@ class StructuredQuadGraphTopology:
     @property
     def corner_nodes(self):
         n_rows, n_cols = self.shape
-        return np.asarray(
-            (n_rows * n_cols - 1, (n_rows - 1) * n_cols, 0, n_cols - 1), dtype=int
-        )
+        return (n_rows * n_cols - 1, (n_rows - 1) * n_cols, 0, n_cols - 1)
 
     @property
     @lru_cache()
@@ -519,10 +511,6 @@ class StructuredQuadGraphExtras(StructuredQuadGraphTopology, Graph):
             patches=StructuredQuadLayoutCython.links_at_patch(self.shape),
             sort=sort,
         )
-
-    @property
-    def nodes_at_link(self):
-        return self.ds["nodes_at_link"].values
 
 
 class StructuredQuadGraph(StructuredQuadGraphExtras):

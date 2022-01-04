@@ -44,8 +44,6 @@ class SinkFillerBarnes(LakeMapperBarnes):
 
     _name = "SinkFillerBarnes"
 
-    _unit_agnostic = True
-
     _cite_as = """@article{BARNES2014117,
         title = "Priority-flood: An optimal depression-filling and watershed-labeling algorithm for digital elevation models",
         journal = "Computers & Geosciences",
@@ -123,7 +121,7 @@ class SinkFillerBarnes(LakeMapperBarnes):
 
         # Most of the functionality of this component is directly inherited
         # from SinkFillerBarnes, so
-        super().__init__(
+        super(SinkFillerBarnes, self).__init__(
             grid,
             surface=surface,
             method=method,
@@ -261,7 +259,7 @@ class SinkFillerBarnes(LakeMapperBarnes):
                 )
                 raise NotImplementedError(msg)
 
-        super().run_one_step()
+        super(SinkFillerBarnes, self).run_one_step()
 
         self._sed_fill_depth[:] = self._surface - self._supplied_surface
 
@@ -272,18 +270,18 @@ class SinkFillerBarnes(LakeMapperBarnes):
 
         Items are not returned in ID order.
         """
-        return super().lake_dict
+        return super(SinkFillerBarnes, self).lake_dict
 
     @property
     def fill_outlets(self):
         """Returns the outlet for each filled area, not necessarily in ID
         order."""
-        return super().lake_outlets
+        return super(SinkFillerBarnes, self).lake_outlets
 
     @property
     def number_of_fills(self):
         """Return the number of individual filled areas."""
-        return super().number_of_lakes
+        return super(SinkFillerBarnes, self).number_of_lakes
 
     @property
     def fill_map(self):
@@ -293,13 +291,13 @@ class SinkFillerBarnes(LakeMapperBarnes):
         Nodes not in a filled area are labelled with
         BAD_INDEX_VALUE (default -1).
         """
-        return super().lake_map
+        return super(SinkFillerBarnes, self).lake_map
 
     @property
     def fill_at_node(self):
         """Return a boolean array, True if the node is filled, False
         otherwise."""
-        return super().lake_at_node
+        return super(SinkFillerBarnes, self).lake_at_node
 
     @property
     def fill_depths(self):
@@ -313,7 +311,7 @@ class SinkFillerBarnes(LakeMapperBarnes):
         The order is the same as that of the keys in fill_dict, and of
         fill_outlets.
         """
-        return super().lake_areas
+        return super(SinkFillerBarnes, self).lake_areas
 
     @property
     def fill_volumes(self):

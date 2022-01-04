@@ -78,8 +78,6 @@ class OverlandFlowBates(Component):
 
     _name = "OverlandFlowBates"
 
-    _unit_agnostic = False
-
     _info = {
         "surface_water__depth": {
             "dtype": float,
@@ -116,7 +114,7 @@ class OverlandFlowBates(Component):
         g=scipy.constants.g,
         rainfall_intensity=0.0,
     ):
-        super().__init__(grid)
+        super(OverlandFlowBates, self).__init__(grid)
 
         # First we copy our grid
 

@@ -50,14 +50,6 @@ landlab.plot.imshow module
    :undoc-members:
    :show-inheritance:
 
-landlab.plot.network_sediment_transporter module
-------------------------------------------------
-
-.. automodule:: landlab.plot.network_sediment_transporter
-  :members:
-  :undoc-members:
-  :show-inheritance:
-
 landlab.plot.video\_out module
 ------------------------------
 

@@ -63,7 +63,7 @@ def _estimate_hack_coeff(A, L):
     return popt
 
 
-def _flatten(list_):
+def _flatten(l):
     """
     Examples
     --------
@@ -78,12 +78,12 @@ def _flatten(list_):
     ...     np.array([1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11, 12, 13, 14, 15, 16]))
     >>> assert _flatten(None) is None
     """
-    if list_ is None:
+    if l is None:
         return None
-    if not hasattr(list_, "__iter__"):
-        return [list_]
+    if not hasattr(l, "__iter__"):
+        return [l]
     else:
-        return list(chain(*map(_flatten, list_)))
+        return list(chain(*map(_flatten, l)))
 
 
 class HackCalculator(Component):
@@ -171,8 +171,6 @@ class HackCalculator(Component):
 
     _name = "HackCalculator"
 
-    _unit_agnostic = True
-
     _info = {
         "distance_to_divide": {
             "dtype": float,
@@ -234,11 +232,9 @@ class HackCalculator(Component):
         **kwds :
             Values to pass to the ChannelProfiler.
         """
-        super().__init__(grid)
-        super().initialize_output_fields()
-        self._dist = grid.at_node["distance_to_divide"]
+        super(HackCalculator, self).__init__(grid)
 
-        self.profiler = ChannelProfiler(grid, **kwds)
+        self._profiler = ChannelProfiler(grid, **kwds)
         self._save_full_df = save_full_df
 
     @property
@@ -312,19 +308,19 @@ class HackCalculator(Component):
     def calculate_hack_parameters(self):
         """Calculate Hack parameters for desired watersheds."""
         out = collections.OrderedDict()
-        self.profiler.run_one_step()
+        self._profiler.run_one_step()
 
-        self._dist[:] = calculate_distance_to_divide(self._grid, longest_path=True)
+        dist = calculate_distance_to_divide(self._grid, longest_path=True)
 
         if self._save_full_df:
             internal_df = []
 
         # for watershed in watersheds (in profile structure)
-        for outlet_node in self.profiler._data_struct:
-            seg_tuples = self.profiler._data_struct[outlet_node].keys()
+        for outlet_node in self._profiler._data_struct:
+            seg_tuples = self._profiler._data_struct[outlet_node].keys()
 
             watershed = [
-                self.profiler._data_struct[outlet_node][seg]["ids"]
+                self._profiler._data_struct[outlet_node][seg]["ids"]
                 for seg in seg_tuples
             ]
 
@@ -333,7 +329,7 @@ class HackCalculator(Component):
             nodes = np.unique(_flatten(watershed))
 
             A = self._grid.at_node["drainage_area"][nodes]
-            L = self._dist[nodes]
+            L = dist[nodes]
             C, h = _estimate_hack_coeff(A, L)
 
             out[outlet_node] = {"A_max": A_max, "C": C, "h": h}

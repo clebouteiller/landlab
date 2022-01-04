@@ -100,7 +100,7 @@ class OrientedRasterCTS(CellLabCTSModel):
 
         # Call the LandlabCellularAutomaton constructor to do the rest of
         # the initialization
-        super().__init__(
+        super(OrientedRasterCTS, self).__init__(
             model_grid,
             node_state_dict,
             transition_list,

@@ -90,8 +90,7 @@ import numpy as np
 import scipy.constants
 
 from landlab import Component, FieldError
-
-from . import _links as links
+from landlab.grid.structured_quad import links
 
 _SEVEN_OVER_THREE = 7.0 / 3.0
 
@@ -189,8 +188,6 @@ class OverlandFlow(Component):
 
     _name = "OverlandFlow"
 
-    _unit_agnostic = False
-
     _cite_as = """@article{adams2017landlab,
         title={The Landlab v1. 0 OverlandFlow component: a Python
             tool for computing shallow-water flow across watersheds},
@@ -206,6 +203,8 @@ class OverlandFlow(Component):
         publisher={Copernicus GmbH}
         }
     """
+
+    _name = "OverlandFlow"
 
     _info = {
         "surface_water__depth": {
@@ -273,12 +272,12 @@ class OverlandFlow(Component):
         theta : float, optional
             Weighting factor from de Almeida et al., 2012.
         rainfall_intensity : float, optional
-            Rainfall intensity. Default is zero.
+            Rainfall intensity.
         steep_slopes : bool, optional
             Modify the algorithm to handle steeper slopes at the expense of
             speed. If model runs become unstable, consider setting to True.
         """
-        super().__init__(grid)
+        super(OverlandFlow, self).__init__(grid)
 
         # First we copy our grid
 
@@ -292,7 +291,7 @@ class OverlandFlow(Component):
 
         self._g = g
         self._theta = theta
-        self.rainfall_intensity = rainfall_intensity
+        self._rainfall_intensity = rainfall_intensity
         self._steep_slopes = steep_slopes
 
         # Now setting up fields at the links...
@@ -370,21 +369,6 @@ class OverlandFlow(Component):
     def dt(self, dt):
         assert dt > 0
         self._dt = dt
-
-    @property
-    def rainfall_intensity(self):
-        """rainfall_intensity: the rainfall rate [m/s]
-
-        Must be positive.
-        """
-        return self._rainfall_intensity
-
-    @rainfall_intensity.setter
-    def rainfall_intensity(self, rainfall_intensity):
-        if rainfall_intensity >= 0:
-            self._rainfall_intensity = rainfall_intensity
-        else:
-            raise ValueError("Rainfall intensity must be positive")
 
     def calc_time_step(self):
         """Calculate time step.
@@ -889,6 +873,7 @@ def find_active_neighbors_for_fixed_links(grid):
 
     Examples
     --------
+    >>> from landlab.grid.structured_quad.links import neighbors_at_link
     >>> from landlab import NodeStatus, RasterModelGrid
     >>> from landlab.components.overland_flow.generate_overland_flow_deAlmeida import find_active_neighbors_for_fixed_links
 

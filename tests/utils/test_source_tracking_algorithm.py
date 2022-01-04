@@ -57,7 +57,8 @@ def test_route_to_multiple_error_raised():
 
 
 def test_track_source():
-    """Unit tests for track_source()."""
+    """Unit tests for track_source().
+    """
     grid = RasterModelGrid((5, 5), xy_spacing=(1.0, 1.0))
     grid.at_node["topographic__elevation"] = np.array(
         [
@@ -107,7 +108,8 @@ def test_track_source():
 
 
 def test_find_unique_upstream_hsd_ids_and_fractions():
-    """Unit tests find_unique_upstream_hsd_ids_and_fractions()."""
+    """Unit tests find_unique_upstream_hsd_ids_and_fractions().
+    """
     grid = RasterModelGrid((5, 5), xy_spacing=(1.0, 1.0))
     grid.at_node["topographic__elevation"] = np.array(
         [

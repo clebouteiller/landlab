@@ -71,8 +71,6 @@ class _FlowDirectorToOne(_FlowDirector):
 
     _name = "FlowDirectorToOne"
 
-    _unit_agnostic = True
-
     _info = {
         "flow__link_to_receiver_node": {
             "dtype": int,
@@ -120,7 +118,7 @@ class _FlowDirectorToOne(_FlowDirector):
         """Initialize the _FlowDirectorTo_One class."""
         # run init for the inherited class
 
-        super().__init__(grid, surface)
+        super(_FlowDirectorToOne, self).__init__(grid, surface)
         self.initialize_output_fields()
 
         self._to_n_receivers = "one"

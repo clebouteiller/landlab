@@ -23,6 +23,7 @@ methods.
    io/index
    layers/index
    plot/index
+   testing/index
    utils/index
    values/index
 

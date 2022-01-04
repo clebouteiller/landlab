@@ -2,7 +2,7 @@ name: landlab_notebooks
 channels:
   - conda-forge
 dependencies:
-- landlab>=2.1
+- landlab
 - pip
 - pip:
-  - -r requirements-notebooks.txt
+  - -r file:requirements-notebooks.txt

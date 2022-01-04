@@ -80,8 +80,6 @@ class VegCA(Component):
 
     _name = "Cellular Automata Plant Competition"
 
-    _unit_agnostic = False
-
     _info = {
         "plant__age": {
             "dtype": float,
@@ -191,7 +189,7 @@ class VegCA(Component):
             it will be 0.
 
         """
-        super().__init__(grid)
+        super(VegCA, self).__init__(grid)
 
         self.Edit_VegCov = Edit_VegCov
 

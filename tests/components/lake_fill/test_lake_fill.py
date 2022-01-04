@@ -12,7 +12,7 @@ from landlab.components import (
     FlowDirectorSteepest,
     LakeMapperBarnes,
 )
-from landlab.utils import StablePriorityQueue
+
 
 """
 These tests test specific aspects of LakeMapperBarnes not picked up in the
@@ -158,15 +158,14 @@ def test_permitted_overfill():
     lmb = LakeMapperBarnes(mg, method="Steepest")
     lmb._closed = mg.zeros("node", dtype=bool)
     lmb._closed[mg.status_at_node == mg.BC_NODE_IS_CLOSED] = True
-    open = StablePriorityQueue()
     edges = np.array([7])
     for edgenode in edges:
-        open.add_task(edgenode, priority=z[edgenode])
+        lmb._open.add_task(edgenode, priority=z[edgenode])
     lmb._closed[edges] = True
     while True:
         try:
             lmb._fill_one_node_to_slant(
-                z, mg.adjacent_nodes_at_node, lmb._pit, open, lmb._closed, True
+                z, mg.adjacent_nodes_at_node, lmb._pit, lmb._open, lmb._closed, True
             )
         except KeyError:
             break
@@ -189,13 +188,12 @@ def test_no_reroute():
         redirect_flow_steepest_descent=True,
         track_lakes=True,
     )
-    openq = StablePriorityQueue()
 
     lake_dict = {1: deque([6]), 18: deque([17])}
     fd.run_one_step()  # fill the director fields
     fa.run_one_step()  # get a drainage_area
     orig_surf = lmb._track_original_surface()
-    lmb._redirect_flowdirs(orig_surf, lake_dict, openq)
+    lmb._redirect_flowdirs(orig_surf, lake_dict)
 
     assert mg.at_node["flow__receiver_node"][6] == 1
     assert mg.at_node["flow__receiver_node"][17] == 18

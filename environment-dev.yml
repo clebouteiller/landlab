@@ -2,8 +2,7 @@ name: landlab_dev
 dependencies:
 - pip
 - pip:
-  - -r requirements.txt
-  - -r requirements-testing.txt
-  - -r requirements-dev.txt
-  - -r requirements-notebooks.txt
-  - -r requirements-docs.txt
+  - -r file:requirements.txt
+  - -r file:requirements-testing.txt
+  - -r file:requirements-dev.txt
+  - -r file:requirements-notebooks.txt

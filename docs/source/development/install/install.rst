@@ -90,7 +90,7 @@ any changes you make to your copy of the code is seen by Python the
 
 .. code-block:: bash
 
-   $ pip install -e .
+   $ python setup.py develop
 
 Conda Environment Tips
 ----------------------
@@ -116,7 +116,7 @@ To uninstall your development version of Landlab (again from the root
 
 .. code-block:: bash
 
-   $ pip uninstall
+   $ python setup.py develop -u
 
 With Landlab uninstalled, you will no longer be able to import Landlab
 from outside the root folder of your working copy.

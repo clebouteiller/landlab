@@ -5,7 +5,7 @@ cimport cython
 from libc.string cimport memcpy, memmove
 from libc.stdlib cimport malloc, free
 
-DTYPE = int
+DTYPE = np.int
 ctypedef np.int_t DTYPE_t
 
 

@@ -32,3 +32,11 @@ FlowDirectorDinf
     :members:
     :undoc-members:
     :show-inheritance:
+
+Utilities
+---------
+
+.. automodule:: landlab.components.flow_director
+    :members:
+    :undoc-members:
+    :show-inheritance:

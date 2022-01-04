@@ -1,5 +1,4 @@
-dask[array]
+dask
 jupyter
 holoviews
 nbformat
-mesa

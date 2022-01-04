@@ -55,8 +55,6 @@ class LithoLayers(Lithology):
 
     _name = "LithoLayers"
 
-    _unit_agnostic = True
-
     _cite_as = """@article{barnhart2018lithology,
                     title = "Lithology: A Landlab submodule for spatially variable rock properties",
                     journal = "Journal of Open Source Software",
@@ -208,7 +206,7 @@ class LithoLayers(Lithology):
             layer_thicknesses.append(layer_thickness)
             layer_ids.append(ids[i] * np.ones(z_surf.size))
 
-        super().__init__(
+        super(LithoLayers, self).__init__(
             grid,
             layer_thicknesses,
             layer_ids,

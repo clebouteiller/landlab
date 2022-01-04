@@ -258,7 +258,7 @@ def wrap_as_bmi(cls):
         def __init__(self):
             self._base = None
             self._clock = None
-            super().__init__()
+            super(BmiWrapper, self).__init__()
 
             self._input_var_names = tuple(
                 set(self._cls.input_var_names) | {"boundary_condition_flag"}
@@ -284,15 +284,9 @@ def wrap_as_bmi(cls):
             """Names of the input exchange items."""
             return self._input_var_names
 
-        def get_input_item_count(self):
-            return len(self._input_var_names)
-
         def get_output_var_names(self):
             """Names of the output exchange items."""
             return self._output_var_names
-
-        def get_output_item_count(self):
-            return len(self._output_var_names)
 
         def get_current_time(self):
             """Current component time."""
@@ -514,12 +508,6 @@ def wrap_as_bmi(cls):
                 return self._base.grid.nodes_at_patch
             elif grid == 1:
                 return self._base.grid.corners_at_cell
-
-        def get_grid_face_edges(self, grid):
-            if grid == 0:
-                return self._base.grid.links_at_patch
-            elif grid == 1:
-                return self._base.grid.faces_at_cell
 
         def get_grid_node_count(self, grid):
             if grid == 0:

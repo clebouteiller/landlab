@@ -51,15 +51,6 @@ Model with Landlab and Components
     components
     build_a_model
 
-Landlab and Units
------------------
-
-.. toctree::
-    :maxdepth: 2
-
-    units
-
-
 Landlab Tutorial Library
 ------------------------
 

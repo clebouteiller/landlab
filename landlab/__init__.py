@@ -9,15 +9,15 @@
 :URL: https://landlab.readthedocs.io/en/release/
 :License: MIT
 """
-import pkg_resources
+
 from numpy import set_printoptions
 
 from ._registry import registry
+from ._version import get_versions
 from .core.errors import MissingKeyError, ParameterValueError
 from .core.model_component import Component
 from .core.model_parameter_loader import load_params
-from .core.utils import ExampleData
-from .field import FieldError
+from .field.scalar_data_fields import FieldError
 from .grid import (
     HexModelGrid,
     ModelGrid,
@@ -29,7 +29,7 @@ from .grid import (
 )
 from .grid.linkstatus import LinkStatus
 from .grid.nodestatus import NodeStatus
-from .plot import imshow_grid, imshow_grid_at_node, imshowhs_grid, imshowhs_grid_at_node
+from .plot import imshow_grid, imshow_grid_at_node
 
 try:
     set_printoptions(legacy="1.13")
@@ -40,7 +40,6 @@ finally:
 
 cite_as = registry.format_citations
 
-__version__ = pkg_resources.get_distribution("landlab").version
 __all__ = [
     "registry",
     "MissingKeyError",
@@ -48,7 +47,6 @@ __all__ = [
     "Component",
     "FieldError",
     "load_params",
-    "ExampleData",
     "ModelGrid",
     "HexModelGrid",
     "RadialModelGrid",
@@ -60,8 +58,7 @@ __all__ = [
     "create_grid",
     "imshow_grid",
     "imshow_grid_at_node",
-    "imshowhs_grid",
-    "imshowhs_grid_at_node",
 ]
 
-del pkg_resources
+__version__ = get_versions()["version"]
+del get_versions

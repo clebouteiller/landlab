@@ -93,7 +93,7 @@ class RasterCTS(CellLabCTSModel):
 
         # Call the LandlabCellularAutomaton.__init__() method to do the rest of
         # the initialization
-        super().__init__(
+        super(RasterCTS, self).__init__(
             model_grid,
             node_state_dict,
             transition_list,

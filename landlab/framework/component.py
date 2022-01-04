@@ -38,8 +38,8 @@ def load_components_from_dir(path, cls):
     dictionary of discovered component names as keys and component
     classes as values.
     """
-    import imp
     import sys
+    import imp
 
     components = {}
 

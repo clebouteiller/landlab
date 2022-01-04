@@ -527,29 +527,23 @@ def write_esri_ascii(path, fields, names=None, clobber=False):
     Examples
     --------
     >>> import numpy as np
-    >>> import os
-    >>> import tempfile
+    >>> from landlab.testing.tools import cdtemp
     >>> from landlab import RasterModelGrid
     >>> from landlab.io.esri_ascii import write_esri_ascii
 
     >>> grid = RasterModelGrid((4, 5), xy_spacing=(2., 2.))
     >>> _ = grid.add_field("air__temperature", np.arange(20.), at="node")
-    >>> with tempfile.TemporaryDirectory() as tmpdirname:
-    ...     fname = os.path.join(tmpdirname, 'test.asc')
-    ...     files = write_esri_ascii(fname, grid)
-    >>> for file in files:
-    ...     print(os.path.basename(file))
-    test.asc
+    >>> with cdtemp() as _:
+    ...     files = write_esri_ascii('test.asc', grid)
+    >>> files
+    ['test.asc']
 
     >>> _ = grid.add_field("land_surface__elevation", np.arange(20.), at="node")
-    >>> with tempfile.TemporaryDirectory() as tmpdirname:
-    ...     fname = os.path.join(tmpdirname, 'test.asc')
-    ...     files = write_esri_ascii(fname, grid)
+    >>> with cdtemp() as _:
+    ...     files = write_esri_ascii('test.asc', grid)
     >>> files.sort()
-    >>> for file in files:
-    ...     print(os.path.basename(file))
-    test_air__temperature.asc
-    test_land_surface__elevation.asc
+    >>> files
+    ['test_air__temperature.asc', 'test_land_surface__elevation.asc']
     """
     if os.path.exists(path) and not clobber:
         raise ValueError("file exists")

@@ -278,10 +278,7 @@ class ChannelProfiler(_BaseProfiler):
 
     Create the second example grid we showed above. Note that in order to do
     this we need to enter the elevations starting from the lower left so the
-    elevation order may seem upside-down. In addition, in this example,
-    elevation is only provided along the profiles. The third line of code below
-    sets all nodes with a value of zero to closed, such that these nodes are
-    igored.
+    elevation order may seem upside-down    .
 
     >>> z = np.array([ 0,  0,  0,  0,  0,  0,  0,  0,  1,  0,
     ...                0,  0,  0,  0,  0,  0,  4,  3,  2,  0,
@@ -291,6 +288,7 @@ class ChannelProfiler(_BaseProfiler):
     ...                0,  4,  0,  0,  7,  0,  8,  0,  0,  0,
     ...                0,  5,  6,  0,  0,  0,  9,  0,  0,  0,
     ...                0,  0,  0,  0,  0,  0,  0,  0,  0,  0,], dtype=float)
+
     >>> mg = RasterModelGrid((8, 10))
     >>> z = mg.add_field("topographic__elevation", z, at="node")
     >>> mg.set_nodata_nodes_to_closed(z, 0)
@@ -479,8 +477,6 @@ class ChannelProfiler(_BaseProfiler):
 
     _name = "ChannelProfiler"
 
-    _unit_agnostic = True
-
     _info = {
         "drainage_area": {
             "dtype": float,
@@ -522,8 +518,8 @@ class ChannelProfiler(_BaseProfiler):
         """
         Parameters
         ----------
-        grid : Landlab Model Grid instance
-        channel_definition_field : field name as string, optional
+        grid : Landlab Model Grid instance, required
+        channel_definition_field : field name as string
             Name of field used to identify the outlet and headwater nodes of the
             channel network. Default is "drainage_area".
         minimum_outlet_threshold : float, optional
@@ -548,11 +544,11 @@ class ChannelProfiler(_BaseProfiler):
             nodes to start the channel profiles from. If not provided, the
             default is the number_of_watersheds node IDs on the model grid
             boundary with the largest terminal drainage area.
-        cmap : str, optional
+        cmap : str
             A valid matplotlib cmap string. Default is "viridis".
 
         """
-        super().__init__(grid)
+        super(ChannelProfiler, self).__init__(grid)
 
         self._cmap = plt.get_cmap(cmap)
         if channel_definition_field in grid.at_node:
@@ -615,7 +611,7 @@ class ChannelProfiler(_BaseProfiler):
     def data_structure(self):
         """OrderedDict defining the channel network.
 
-        The IDs and upstream distance of the channel network nodes are stored
+        The node IDs and distances upstream of the channel network are stored
         in ``data_structure``. It is a dictionary with keys of the outlet node
         ID.
 
@@ -760,7 +756,8 @@ class ChannelProfiler(_BaseProfiler):
         self._create_flat_structures()
 
     def _create_flat_structures(self):
-        """Create expected flattened structures for ids, distances, and colors."""
+        """Create expected flattened structures for ids, distances, and colors.
+        """
         self._nodes = []
 
         self._distance_along_profile = []

@@ -6,7 +6,7 @@ from libc.stdlib cimport malloc, free, qsort
 from libc.math cimport atan2
 
 
-DTYPE = int
+DTYPE = np.int
 ctypedef np.int_t DTYPE_t
 
 from libc.stdlib cimport malloc, free, qsort

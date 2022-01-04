@@ -42,11 +42,10 @@ def save_grid(grid, path, clobber=False):
     --------
     >>> from landlab import RasterModelGrid
     >>> from landlab.io.native_landlab import save_grid
-    >>> import tempfile
+    >>> import os
     >>> grid_out = RasterModelGrid((4, 5), xy_spacing=2.)
-    >>> with tempfile.TemporaryDirectory() as tmpdirname:
-    ...     fname = os.path.join(tmpdirname, 'testsavedgrid.grid')
-    ...     save_grid(grid_out, fname, clobber=True)
+    >>> save_grid(grid_out, 'testsavedgrid.grid', clobber=True)
+    >>> os.remove('testsavedgrid.grid') #to remove traces of this test
     """
     if os.path.exists(path) and not clobber:
         raise ValueError("file exists")
@@ -84,14 +83,13 @@ def load_grid(path):
     >>> from landlab import VoronoiDelaunayGrid
     >>> from landlab.io.native_landlab import load_grid, save_grid
     >>> import numpy as np
-    >>> import tempfile
+    >>> import os
     >>> x = np.random.rand(20)
     >>> y = np.random.rand(20)
     >>> grid_out = VoronoiDelaunayGrid(x, y)
-    >>> with tempfile.TemporaryDirectory() as tmpdirname:
-    ...     fname = os.path.join(tmpdirname, 'testsavedgrid.grid')
-    ...     save_grid(grid_out, fname, clobber=True)
-    ...     grid_in = load_grid(fname)
+    >>> save_grid(grid_out, 'testsavedgrid.grid', clobber=True)
+    >>> grid_in = load_grid('testsavedgrid.grid')
+    >>> os.remove('testsavedgrid.grid') #to remove traces of this test
     """
     (base, ext) = os.path.splitext(path)
     if ext != ".grid":

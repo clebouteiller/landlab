@@ -56,8 +56,6 @@ class DischargeDiffuser(Component):
 
     _name = "DischargeDiffuser"
 
-    _unit_agnostic = True
-
     _info = {
         "flow__potential": {
             "dtype": float,
@@ -111,7 +109,7 @@ class DischargeDiffuser(Component):
         grid : ModelGrid
             A grid.
         """
-        super().__init__(grid)
+        super(DischargeDiffuser, self).__init__(grid)
 
         if isinstance(grid, RasterModelGrid):
             assert grid.number_of_node_rows >= 3
@@ -386,7 +384,7 @@ class DischargeDiffuser(Component):
         dir_sed_flux[deadedge] = 0.0
 
     def diffuse_sediment(self, Qw_in, Qsed_in):
-        """ """
+        """"""
         pass
 
 

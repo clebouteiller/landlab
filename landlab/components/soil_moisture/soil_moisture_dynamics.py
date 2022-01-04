@@ -104,8 +104,6 @@ class SoilMoisture(Component):
 
     _name = "Soil Moisture"
 
-    _unit_agnostic = False
-
     _info = {
         "rainfall__daily_depth": {
             "dtype": float,
@@ -302,7 +300,7 @@ class SoilMoisture(Component):
         current_time: float
               Current time (years).
         """
-        super().__init__(grid)
+        super(SoilMoisture, self).__init__(grid)
 
         self.current_time = 0
         self._method = method

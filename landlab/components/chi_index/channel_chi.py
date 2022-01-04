@@ -109,8 +109,6 @@ class ChiFinder(Component):
 
     _name = "ChiFinder"
 
-    _unit_agnostic = True
-
     _info = {
         "channel__chi_index": {
             "dtype": float,
@@ -201,7 +199,7 @@ class ChiFinder(Component):
             Raise an exception if adding an already existing field.
 
         """
-        super().__init__(grid)
+        super(ChiFinder, self).__init__(grid)
 
         if grid.at_node["flow__receiver_node"].size != grid.size("node"):
             msg = (
@@ -597,7 +595,7 @@ class ChiFinder(Component):
             A matplotlib-style string for the style to use for the line, if
             plot_line.
         """
-        from matplotlib.pyplot import clf, figure, plot, xlabel, ylabel
+        from matplotlib.pyplot import plot, xlabel, ylabel, figure, clf
 
         figure("Chi plot")
         clf()
