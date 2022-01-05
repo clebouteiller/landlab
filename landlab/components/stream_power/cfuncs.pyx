@@ -11,7 +11,7 @@ from scipy.optimize._zeros import _brentq as brentq
 DTYPE_FLOAT = np.double
 ctypedef np.double_t DTYPE_FLOAT_t
 
-DTYPE_INT = np.int
+DTYPE_INT = int
 ctypedef np.int_t DTYPE_INT_t
 
 
@@ -54,7 +54,7 @@ def brent_method_erode_variable_threshold(np.ndarray[DTYPE_INT_t, ndim=1] src_no
         Node elevations.
     """
     # define internally used variables.
-    cdef unsigned int n_nodes = src_nodes.size
+    cdef unsigned int n_nodes = src_nodes.shape[0]
     cdef unsigned int src_id
     cdef unsigned int dst_id
     cdef unsigned int i
@@ -181,7 +181,7 @@ def brent_method_erode_fixed_threshold(np.ndarray[DTYPE_INT_t, ndim=1] src_nodes
         Node elevations.
     """
     # define internally used variables.
-    cdef unsigned int n_nodes = src_nodes.size
+    cdef unsigned int n_nodes = src_nodes.shape[0]
     cdef unsigned int src_id
     cdef unsigned int dst_id
     cdef unsigned int i
@@ -392,7 +392,7 @@ def smooth_stream_power_eroder_solver(np.ndarray[DTYPE_INT_t, ndim=1] src_nodes,
     z : array_like
         Node elevations.
     """
-    cdef unsigned int n_nodes = src_nodes.size
+    cdef unsigned int n_nodes = src_nodes.shape[0]
     cdef unsigned int src_id
     cdef unsigned int dst_id
     cdef unsigned int i

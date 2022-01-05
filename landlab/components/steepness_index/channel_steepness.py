@@ -77,6 +77,8 @@ class SteepnessFinder(Component):
 
     _name = "SteepnessFinder"
 
+    _unit_agnostic = True
+
     _info = {
         "channel__steepness_index": {
             "dtype": float,
@@ -149,7 +151,7 @@ class SteepnessFinder(Component):
         ----------
         grid : RasterModelGrid
             A landlab RasterModelGrid.
-        reference_concavity : float
+        reference_concavity : float (default 0.5)
             The reference concavity to use in the calculation.
         min_drainage_area : float (m**2; default 1.e6)
             The minimum drainage area above which steepness indices are
@@ -166,7 +168,7 @@ class SteepnessFinder(Component):
             segment, it will be lumped together with the next segment.
             If zero, one value is assigned to each channel node.
         """
-        super(SteepnessFinder, self).__init__(grid)
+        super().__init__(grid)
 
         if grid.at_node["flow__receiver_node"].size != grid.size("node"):
             msg = (

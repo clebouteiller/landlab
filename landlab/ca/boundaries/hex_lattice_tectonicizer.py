@@ -14,7 +14,6 @@ Created on Mon Nov 17 08:01:49 2014
 @author: gtucker
 """
 
-import numpy as np
 from numpy import (
     amax,
     arange,
@@ -277,9 +276,7 @@ class LatticeNormalFault(HexLatticeTectonicizer):
         """
 
         # Do the base class init
-        super(LatticeNormalFault, self).__init__(
-            grid, node_state, propid, prop_data, prop_reset_value
-        )
+        super().__init__(grid, node_state, propid, prop_data, prop_reset_value)
         # Set up data structures:
         #   Make sure the footwall location is such that the fault actually
         #   cuts across the grid. This means the x intercept has to be, at
@@ -454,6 +451,7 @@ class LatticeNormalFault(HexLatticeTectonicizer):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from landlab.ca.boundaries.hex_lattice_tectonicizer import LatticeNormalFault
         >>> from landlab import HexModelGrid
         >>> pid = np.arange(25, dtype=int)
@@ -485,7 +483,7 @@ class LatticeNormalFault(HexLatticeTectonicizer):
         array([42, 43, 19, 20, 21, 46, 23, 24, 50, 51, 27, 28, 29, 55, 31, 32, 33,
                59, 35, 36, 37, 62])
         """
-        self.link_offset_id = arange(self.grid.number_of_links, dtype=np.int)
+        self.link_offset_id = arange(self.grid.number_of_links, dtype=int)
         nc = self.grid.number_of_node_columns
         default_offset = 2 * nc + 2 * (nc - 1) + nc // 2
         self.first_link_shifted_from = 0
@@ -810,9 +808,7 @@ class LatticeUplifter(HexLatticeTectonicizer):
         array([1, 2, 3, 4])
         """
         # Do the base class init
-        super(LatticeUplifter, self).__init__(
-            grid, node_state, propid, prop_data, prop_reset_value
-        )
+        super().__init__(grid, node_state, propid, prop_data, prop_reset_value)
 
         # Remember the IDs of nodes on the bottom row
         self.inner_base_row_nodes = zeros(self.nc - 2, dtype=int)
@@ -1044,6 +1040,7 @@ class LatticeUplifter(HexLatticeTectonicizer):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from landlab import HexModelGrid
         >>> from landlab.ca.hex_cts import HexCTS
         >>> from landlab.ca.celllab_cts import Transition

@@ -6,7 +6,7 @@ cimport cython
 DTYPE_FLOAT = np.double
 ctypedef np.double_t DTYPE_FLOAT_t
 
-DTYPE_INT = np.int
+DTYPE_INT = int
 #ctypedef np.longlong_t DTYPE_INT_t
 ctypedef np.int_t DTYPE_INT_t
 
@@ -39,7 +39,7 @@ def adjust_flow_receivers(np.ndarray[DTYPE_INT_t, ndim=1] src_nodes,
     steepest_slope : array_like
         Gradient of steepest descent from nodes.
     """
-    cdef unsigned int n_nodes = src_nodes.size
+    cdef unsigned int n_nodes = src_nodes.shape[0]
     cdef int src_id
     cdef int dst_id
 

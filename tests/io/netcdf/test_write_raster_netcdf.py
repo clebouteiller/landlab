@@ -24,18 +24,18 @@ def test_append_with_time(tmpdir):
         for name in ["topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:],
+                root.variables[name],
                 [
                     [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
                     [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
                 ],
             )
-            assert root.variables[name][:].dtype == "int64"
+            assert root.variables[name].dtype == "int64"
             assert "nt" in root.dimensions
             assert len(root.dimensions["nt"]) == 2
 
         assert "t" in root.variables
-        assert_array_equal(root.variables["t"][:], [0.0, 1.0])
+        assert_array_equal(root.variables["t"], [0.0, 1.0])
 
         root.close()
 
@@ -52,9 +52,9 @@ def test_without_time(tmpdir):
         for name in ["topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:], [[[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]]]
+                root.variables[name], [[[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]]]
             )
-            assert root.variables[name][:].dtype == "int64"
+            assert root.variables[name].dtype == "int64"
             assert "nt" in root.dimensions
             assert len(root.dimensions["nt"]) == 1
 
@@ -75,14 +75,14 @@ def test_with_time(tmpdir):
         for name in ["topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:], [[[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]]]
+                root.variables[name], [[[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]]]
             )
-            assert root.variables[name][:].dtype == "int64"
+            assert root.variables[name].dtype == "int64"
             assert "nt" in root.dimensions
             assert len(root.dimensions["nt"]) == 1
 
         assert "t" in root.variables
-        assert_array_equal(root.variables["t"][:], [0.0])
+        assert_array_equal(root.variables["t"], [0.0])
 
         root.close()
 
@@ -100,7 +100,7 @@ def test_with_time_netcdf3(tmpdir):
         for name in ["uplift_rate", "topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:],
+                root.variables[name],
                 [
                     [
                         [0.0, 2.0, 4.0],
@@ -114,7 +114,7 @@ def test_with_time_netcdf3(tmpdir):
             assert len(root.dimensions["nt"]) == 1
 
         assert "t" in root.variables
-        assert_array_equal(root.variables["t"][:], [10.0])
+        assert_array_equal(root.variables["t"], [10.0])
 
         root.close()
 
@@ -129,7 +129,7 @@ def test_append_with_time_netcdf3(tmpdir):
         )
         field.at_node["topographic__elevation"] *= 2
         write_raster_netcdf(
-            "test.nc", field, append=True, format="NETCDF3_64BIT", time=1.0
+            "test.nc", field, append=True, format="NETCDF3_64BIT", time=2.0
         )
 
         root = nc.Dataset("test.nc", "r", format="NETCDF3_64BIT")
@@ -137,7 +137,7 @@ def test_append_with_time_netcdf3(tmpdir):
         for name in ["topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:],
+                root.variables[name],
                 [
                     [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
                     [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
@@ -147,7 +147,7 @@ def test_append_with_time_netcdf3(tmpdir):
             assert len(root.dimensions["nt"]) == 2
 
         assert "t" in root.variables
-        assert_array_equal(root.variables["t"][:], [0.0, 1.0])
+        assert_array_equal(root.variables["t"], [0.0, 2.0])
 
         root.close()
 
@@ -166,12 +166,18 @@ def test_append_without_time_netcdf3(tmpdir):
         for name in ["topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:], [[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]]
+                # root.variables[name][1, :, :], [[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]]
+                root.variables[name],
+                [
+                    [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
+                    [[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
+                ],
             )
             assert "nt" in root.dimensions
-            assert len(root.dimensions["nt"]) == 1
+            assert len(root.dimensions["nt"]) == 2
 
-        assert "t" not in root.variables
+        # assert "t" not in root.variables
+        assert_array_equal(root.variables["t"], [0, 1])
 
         root.close()
 
@@ -189,7 +195,7 @@ def test_without_time_netcdf3(tmpdir):
         for name in ["uplift_rate", "topographic__elevation"]:
             assert name in root.variables
             assert_array_equal(
-                root.variables[name][:],
+                root.variables[name],
                 [
                     [
                         [0.0, 2.0, 4.0],
@@ -223,7 +229,7 @@ def test_names_keyword(tmpdir):
         assert "uplift_rate" in root.variables
 
         assert_array_equal(
-            root.variables["uplift_rate"][:],
+            root.variables["uplift_rate"],
             [
                 [
                     [0.0, 2.0, 4.0],

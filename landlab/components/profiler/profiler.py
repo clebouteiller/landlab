@@ -130,6 +130,8 @@ class Profiler(_BaseProfiler):
 
     _name = "Profiler"
 
+    _unit_agnostic = True
+
     def __init__(self, grid, endpoints, cmap="viridis"):
         """Instantiate Profiler.
 
@@ -147,7 +149,7 @@ class Profiler(_BaseProfiler):
         cmap : str
             A valid matplotlib cmap string. Default is "viridis".
         """
-        super(_BaseProfiler, self).__init__(grid)
+        super().__init__(grid)
 
         self._cmap = plt.get_cmap(cmap)
 
@@ -248,8 +250,7 @@ class Profiler(_BaseProfiler):
             self._data_struct[segment_id]["color"] = color_mapping[segment_id]
 
     def _create_flat_structures(self):
-        """Create expected flattened structures for ids, distances, and colors.
-        """
+        """Create expected flattened structures for ids, distances, and colors."""
         self._nodes = []
         self._distance_along_profile = []
         self._colors = []
