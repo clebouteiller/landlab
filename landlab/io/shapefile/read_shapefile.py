@@ -161,6 +161,8 @@ def read_shapefile(
     First, we make a simple shapefile
 
     >>> from io import BytesIO
+    >>> import os
+
     >>> import shapefile
     >>> shp = BytesIO()
     >>> shx = BytesIO()
@@ -228,7 +230,7 @@ def read_shapefile(
 
     Now read in both files together.
 
-    >>> grid = read_shapefile(shp,dbf=dbf,points_shapefile=p_shp,points_dbf=p_dbf)
+    >>> grid = read_shapefile(shp, dbf=dbf, points_shapefile=p_shp, points_dbf=p_dbf)
     >>> grid.nodes
     array([0, 1, 2, 3])
     >>> grid.x_of_node
@@ -415,7 +417,7 @@ def read_shapefile(
             x_diff = grid.x_of_node - point_x
             y_diff = grid.y_of_node - point_y
 
-            dist = np.sqrt(x_diff ** 2 + y_diff ** 2)
+            dist = np.sqrt(x_diff**2 + y_diff**2)
 
             # check that the distance is small.
             if np.min(dist) > threshold:

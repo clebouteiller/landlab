@@ -50,34 +50,51 @@ class SpaceLargeScaleEroder(Component):
     ---------
     >>> import numpy as np
     >>> from landlab import RasterModelGrid
-    >>> from landlab.components import (PriorityFloodFlowRouter,
-    ...     SpaceLargeScaleEroder)
-    >>> import matplotlib.pyplot as plt #For plotting results; optional
-    >>> from landlab import imshow_grid #For plotting results; optional
+    >>> from landlab.components import (
+    ...     PriorityFloodFlowRouter, SpaceLargeScaleEroder
+    ... )
+    >>> import matplotlib.pyplot as plt  # For plotting results; optional
+    >>> from landlab import imshow_grid  # For plotting results; optional
+
     >>> num_rows = 20
     >>> num_columns = 20
     >>> node_spacing = 100.0
     >>> mg = RasterModelGrid((num_rows, num_columns), xy_spacing=node_spacing)
     >>> node_next_to_outlet = num_columns + 1
     >>> np.random.seed(seed=5000)
-    >>> _ = mg.add_zeros('topographic__elevation', at='node')
-    >>> _ = mg.add_zeros('node', 'soil__depth')
-    >>> mg.at_node['soil__depth'][mg.core_nodes] = 2.0
-    >>> _ = mg.add_zeros('bedrock__elevation', at='node')
-    >>> mg.at_node['bedrock__elevation'] += (mg.node_y / 10. +
-    ...     mg.node_x / 10. + np.random.rand(len(mg.node_y)) / 10.)
-    >>> mg.at_node['bedrock__elevation'][:] = mg.at_node['topographic__elevation']
-    >>> mg.at_node['topographic__elevation'][:] += mg.at_node['soil__depth']
-    >>> mg.set_closed_boundaries_at_grid_edges(bottom_is_closed=True,
+    >>> _ = mg.add_zeros("topographic__elevation", at="node")
+    >>> _ = mg.add_zeros("soil__depth", at="node")
+    >>> mg.at_node["soil__depth"][mg.core_nodes] = 2.0
+    >>> _ = mg.add_zeros("bedrock__elevation", at="node")
+    >>> mg.at_node["bedrock__elevation"] += (
+    ...     mg.node_y / 10. + mg.node_x / 10. + np.random.rand(len(mg.node_y)) / 10.
+    ... )
+    >>> mg.at_node["bedrock__elevation"][:] = mg.at_node["topographic__elevation"]
+    >>> mg.at_node["topographic__elevation"][:] += mg.at_node["soil__depth"]
+    >>> mg.set_closed_boundaries_at_grid_edges(
+    ...     bottom_is_closed=True,
     ...     left_is_closed=True,
     ...     right_is_closed=True,
-    ...     top_is_closed=True)
+    ...     top_is_closed=True,
+    ... )
     >>> mg.set_watershed_boundary_condition_outlet_id(
-    ...     0, mg.at_node['topographic__elevation'], -9999.)
+    ...     0, mg.at_node['topographic__elevation'], -9999.0
+    ... )
+
     >>> fr = PriorityFloodFlowRouter(mg, flow_metric='D8', suppress_out = True)
-    >>> sp = SpaceLargeScaleEroder(mg, K_sed=0.01, K_br=0.001,
-    ...     F_f=0., phi=0., H_star=1., v_s=5.0, m_sp=0.5, n_sp=1.0,
-    ...     sp_crit_sed=0, sp_crit_br=0)
+    >>> sp = SpaceLargeScaleEroder(
+    ...     mg,
+    ...     K_sed=0.01,
+    ...     K_br=0.001,
+    ...     F_f=0.0,
+    ...     phi=0.0,
+    ...     H_star=1.0,
+    ...     v_s=5.0,
+    ...     m_sp=0.5,
+    ...     n_sp=1.0,
+    ...     sp_crit_sed=0,
+    ...     sp_crit_br=0,
+    ... )
     >>> timestep = 10.0
     >>> elapsed_time = 0.0
     >>> count = 0
@@ -85,36 +102,39 @@ class SpaceLargeScaleEroder(Component):
     >>> sed_flux = np.zeros(int(run_time // timestep))
     >>> while elapsed_time < run_time:
     ...     fr.run_one_step()
-    ...     _, _ = sp.run_one_step(dt=timestep)
-    ...     sed_flux[count] = mg.at_node['sediment__flux'][node_next_to_outlet]
+    ...     _ = sp.run_one_step(dt=timestep)
+    ...     sed_flux[count] = mg.at_node["sediment__flux"][node_next_to_outlet]
     ...     elapsed_time += timestep
     ...     count += 1
+
+    Plot the results.
+
     >>> fig = plt.figure()
     >>> plot = plt.subplot()
     >>> _ = imshow_grid(
     ...     mg,
-    ...         'topographic__elevation',
-    ...         plot_name='Sediment flux',
-    ...         var_name='Sediment flux',
-    ...         var_units=r'm$^3$/yr',
-    ...         grid_units=('m', 'm'),
-    ...         cmap='terrain'
-    ...     )
+    ...     "topographic__elevation",
+    ...     plot_name="Sediment flux",
+    ...     var_name="Sediment flux",
+    ...     var_units=r"m$^3$/yr",
+    ...     grid_units=("m", "m"),
+    ...     cmap="terrain",
+    ... )
     >>> _ = plt.figure()
     >>> _ = imshow_grid(
-    ...         mg,
-    ...         'sediment__flux',
-    ...         plot_name='Sediment flux',
-    ...         var_name='Sediment flux',
-    ...         var_units=r'm$^3$/yr',
-    ...         grid_units=('m', 'm'),
-    ...         cmap='terrain'
-    ...     )
+    ...     mg,
+    ...     "sediment__flux",
+    ...     plot_name="Sediment flux",
+    ...     var_name="Sediment flux",
+    ...     var_units=r"m$^3$/yr",
+    ...     grid_units=("m", "m"),
+    ...     cmap="terrain",
+    ... )
     >>> fig = plt.figure()
     >>> sedfluxplot = plt.subplot()
-    >>> _ = sedfluxplot.plot(np.arange(len(sed_flux))*timestep, sed_flux, color='k', linewidth=1.0)
-    >>> _ = sedfluxplot.set_xlabel('Time [yr]')
-    >>> _ = sedfluxplot.set_ylabel(r'Sediment flux [m$^3$/yr]')
+    >>> _ = sedfluxplot.plot(np.arange(len(sed_flux)) * timestep, sed_flux, color="k", linewidth=1.0)
+    >>> _ = sedfluxplot.set_xlabel("Time [yr]")
+    >>> _ = sedfluxplot.set_ylabel(r"Sediment flux [m$^3$/yr]")
 
     References
     ----------
@@ -160,13 +180,21 @@ class SpaceLargeScaleEroder(Component):
             "mapping": "node",
             "doc": "Node array containing downstream-to-upstream ordered list of node IDs",
         },
-        "sediment__flux": {
+        "sediment__influx": {
             "dtype": float,
             "intent": "out",
             "optional": False,
             "units": "m3/s",
             "mapping": "node",
             "doc": "Sediment flux (volume per unit time of sediment entering each node)",
+        },
+        "sediment__outflux": {
+            "dtype": float,
+            "intent": "out",
+            "optional": False,
+            "units": "m3/s",
+            "mapping": "node",
+            "doc": "Sediment flux (volume per unit time of sediment leaving each node)",
         },
         "soil__depth": {
             "dtype": float,
@@ -273,18 +301,15 @@ class SpaceLargeScaleEroder(Component):
             (this is created by the DepressionFinderAndRouter). Default True.
         """
         if grid.at_node["flow__receiver_node"].size != grid.size("node"):
-            msg = (
+            raise NotImplementedError(
                 "A route-to-multiple flow director has been "
                 "run on this grid. The landlab development team has not "
                 "verified that SpaceLargeScaleEroder is compatible with "
                 "route-to-multiple methods. Please open a GitHub Issue "
                 "to start this process."
             )
-            raise NotImplementedError(msg)
 
-        super(SpaceLargeScaleEroder, self).__init__(
-            grid,
-        )
+        super(SpaceLargeScaleEroder, self).__init__(grid)
 
         self._soil__depth = grid.at_node["soil__depth"]
         self._topographic__elevation = grid.at_node["topographic__elevation"]
@@ -336,15 +361,14 @@ class SpaceLargeScaleEroder(Component):
 
         self.initialize_output_fields()
 
-        self._qs = grid.at_node["sediment__flux"]
+        self._qs = grid.at_node["sediment__outflux"]
         self._q = return_array_at_node(grid, discharge_field)
 
-        # Create arrays for sediment influx at each node, discharge to the
-        # power "m", and deposition rate
-        self._qs_in = np.zeros(grid.number_of_nodes)
+        # for backward compatibility (remove in 3.0.0+)
+        grid.at_node["sediment__flux"] = grid.at_node["sediment__outflux"]
+
         self._Q_to_the_m = np.zeros(grid.number_of_nodes)
         self._S_to_the_n = np.zeros(grid.number_of_nodes)
-        # self._depo_rate = np.zeros(grid.number_of_nodes)
 
         # store other constants
         self._m_sp = np.float64(m_sp)
@@ -402,6 +426,11 @@ class SpaceLargeScaleEroder(Component):
     def Er(self):
         """Bedrock erosion term."""
         return self._Er
+
+    @property
+    def sediment_influx(self):
+        """Volumetric sediment influx to each node."""
+        return self.grid.at_node["sediment__influx"]
 
     def _calc_erosion_rates(self):
         """Calculate erosion rates."""
@@ -493,7 +522,7 @@ class SpaceLargeScaleEroder(Component):
         self._sed_erosion_term[flooded_nodes] = 0.0
         self._br_erosion_term[flooded_nodes] = 0.0
 
-        self._qs_in[:] = 0
+        self.sediment_influx[:] = 0
 
         vol_SSY_riv = _sequential_ero_depo(
             stack_flip_ud_sel,
@@ -501,7 +530,7 @@ class SpaceLargeScaleEroder(Component):
             area,
             self._q,
             self._qs,
-            self._qs_in,
+            self.sediment_influx,
             self._Es,
             self._Er,
             self._Q_to_the_m,
@@ -519,7 +548,7 @@ class SpaceLargeScaleEroder(Component):
             self._thickness_lim,
         )
 
-        V_leaving_riv = np.sum(self._qs_in) * dt
+        V_leaving_riv = np.sum(self.sediment_influx) * dt
         # Update topography
         cores = self._grid.core_nodes
         z[cores] = br[cores] + H[cores]

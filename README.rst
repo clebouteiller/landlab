@@ -2,7 +2,7 @@
    :target: https://doi.org/10.5281/zenodo.154179
 
 .. image:: https://readthedocs.org/projects/landlab/badge/?version=latest
-    :target: https://readthedocs.org/projects/landlab/?badge=latest
+    :target: https://landlab.readthedocs.org
 
 .. image:: https://github.com/landlab/landlab/actions/workflows/test.yml/badge.svg
     :target: https://github.com/landlab/landlab/actions/workflows/test.yml
@@ -111,9 +111,21 @@ run the following commands:
 
 .. code-block:: bash
 
-    $ conda env create --file=environment-dev.yml
-    $ conda activate landlab_dev
+    $ conda create -n landlab python
+    $ conda install -n landlab --file=requirements.txt
+    $ conda activate landlab
     $ pip install -e .
+
+This will install *landlab* and it's dependencies. You may want to install
+some additional utilities used for developing, testing, and running *landlab*
+notebooks. This can be done with the following:
+
+.. code-block:: bash
+
+    $ conda install --file=requirements-dev.txt
+    $ conda install --file=requirements-testing.txt
+    $ conda install --file=requirements-notebooks.txt
+
 
 How do I verify I've installed Landlab correctly?
 -------------------------------------------------
@@ -193,8 +205,8 @@ Then, click to explore the `example notebooks`_,
 or to go straight to the `teaching notebooks`_.
 
 .. _visit the CSDMS wiki: https://csdms.colorado.edu/wiki/JupyterHub
-.. _example notebooks: https://csdms.rc.colorado.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Flandlab%2Flandlab&urlpath=tree%2Flandlab%2Fnotebooks%2Fwelcome.ipynb&branch=master
-.. _teaching notebooks: https://csdms.rc.colorado.edu/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Flandlab%2Flandlab&urlpath=tree%2Flandlab%2Fnotebooks%2Fteaching%2Fwelcome_teaching.ipynb&branch=master
+.. _example notebooks: https://jupyter.openearthscape.org/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Flandlab%2Flandlab&urlpath=tree%2Flandlab%2Fnotebooks%2Fwelcome.ipynb&branch=master
+.. _teaching notebooks: https://jupyter.openearthscape.org/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Flandlab%2Flandlab&urlpath=tree%2Flandlab%2Fnotebooks%2Fteaching%2Fwelcome_teaching.ipynb&branch=master
 
 
 What License does Landlab use?
