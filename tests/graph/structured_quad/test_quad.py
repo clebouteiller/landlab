@@ -1,13 +1,16 @@
 """Test StructuredQuadGraph."""
+
 import numpy as np
 from numpy.testing import assert_array_equal
-from pytest import approx, mark, raises
+from pytest import approx
+from pytest import mark
+from pytest import raises
 
-from landlab.graph import RectilinearGraph, StructuredQuadGraph, UniformRectilinearGraph
-from landlab.graph.structured_quad.structured_quad import (
-    StructuredQuadLayoutCython,
-    StructuredQuadLayoutPython,
-)
+from landlab.graph import RectilinearGraph
+from landlab.graph import StructuredQuadGraph
+from landlab.graph import UniformRectilinearGraph
+from landlab.graph.structured_quad.structured_quad import StructuredQuadLayoutCython
+from landlab.graph.structured_quad.structured_quad import StructuredQuadLayoutPython
 
 
 def test_graph_is_frozen():
@@ -127,45 +130,6 @@ def test_layouts_match(method):
         getattr(StructuredQuadLayoutCython, method)((3, 4)),
         getattr(StructuredQuadLayoutPython, method)((3, 4)),
     )
-
-
-@mark.skip("speed tests")
-@mark.parametrize(
-    "method",
-    (
-        "links_at_patch",
-        "nodes_at_link",
-        "horizontal_links",
-        "vertical_links",
-        "perimeter_nodes",
-        "links_at_node",
-        "patches_at_link",
-        "link_dirs_at_node",
-        "patches_at_node",
-    ),
-)
-@mark.parametrize("size", (10, 11))
-def test_layouts_cython_is_faster(method, size):
-    from timeit import timeit
-
-    n_rows, n_cols = 3 * 2**size, 4 * 2**size
-
-    def time_method(impl):
-        return timeit(
-            "{impl}.{method}(({n_rows}, {n_cols}))".format(
-                impl=impl, method=method, n_rows=n_rows, n_cols=n_cols
-            ),
-            setup="from landlab.graph.structured_quad.structured_quad import {impl}".format(
-                impl=impl
-            ),
-            number=1,
-        )
-
-    benchmark = time_method("StructuredQuadLayoutPython")
-    time = time_method("StructuredQuadLayoutCython")
-    speedup = benchmark / time
-
-    assert speedup > 1  # or time < 1e-2
 
 
 def test_create():

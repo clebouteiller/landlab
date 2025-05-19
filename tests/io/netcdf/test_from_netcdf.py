@@ -2,7 +2,8 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from landlab import RasterModelGrid
-from landlab.io.netcdf import from_netcdf, to_netcdf
+from landlab.io.netcdf import from_netcdf
+from landlab.io.netcdf import to_netcdf
 
 
 @pytest.mark.parametrize("include", ((), [], set(), None))
@@ -30,8 +31,8 @@ def test_include_everything(tmpdir, format, include, exclude):
     with tmpdir.as_cwd():
         to_netcdf(grid, "test.nc", format=format)
         actual = from_netcdf("test.nc", include=include)
-        assert set(actual.at_node) == set(["elev", "temp"])
-        assert set(actual.at_link) == set(["elev"])
+        assert set(actual.at_node) == {"elev", "temp"}
+        assert set(actual.at_link) == {"elev"}
 
 
 @pytest.mark.parametrize(
@@ -54,7 +55,7 @@ def test_exclude_everything(tmpdir, format, include, exclude):
     "grid_type", ["HexModelGrid", "RadialModelGrid", "RasterModelGrid"]
 )
 def test_from_grid(datadir, grid_type):
-    grid = from_netcdf(datadir / "test-{0}.nc".format(grid_type))
+    grid = from_netcdf(datadir / f"test-{grid_type}.nc")
     assert grid.__class__.__name__ == grid_type
     assert_array_equal(grid.at_node["elev"], 1.0)
     assert_array_equal(grid.at_node["temp"], 1.0)

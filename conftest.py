@@ -1,4 +1,7 @@
-def pytest_addoption(parser):
-    parser.addoption(
-        "--run-notebook", action="store_true", default=False, help="run notebook tests"
-    )
+import numpy as np
+import pytest
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_numpy_printoptions():
+    np.set_printoptions(legacy="1.25")

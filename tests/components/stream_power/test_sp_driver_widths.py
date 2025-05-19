@@ -1,11 +1,13 @@
 """Test simple stream power functionality when a width array is specified."""
+
 import os
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from landlab import RasterModelGrid
-from landlab.components import FlowAccumulator, StreamPowerEroder
+from landlab.components import FlowAccumulator
+from landlab.components import StreamPowerEroder
 
 _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -55,7 +57,7 @@ def test_sp_widths():
     )
 
     # perform the loop (once!)
-    for i in range(1):
+    for _ in range(1):
         fr.run_one_step()
         sqrt_A = mg.at_node["drainage_area"] ** 0.5
         widths[mg.core_nodes] = sqrt_A[mg.core_nodes] / sqrt_A[mg.core_nodes].mean()

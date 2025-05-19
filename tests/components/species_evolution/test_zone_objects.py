@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Tests for SpeciesEvolver zone objects."""
 import numpy as np
 import pandas as pd
@@ -7,13 +6,15 @@ import pytest
 
 from landlab import RasterModelGrid
 from landlab.components import SpeciesEvolver
-from landlab.components.species_evolution import ZoneController, ZoneTaxon, zone as zn
+from landlab.components.species_evolution import ZoneController
+from landlab.components.species_evolution import ZoneTaxon
+from landlab.components.species_evolution import zone as zn
 
 
 @pytest.fixture()
 def zone_example_grid():
     mg = RasterModelGrid((5, 7), 2)
-    z = mg.add_zeros("node", "topographic__elevation")
+    z = mg.add_zeros("topographic__elevation", at="node")
     return mg, z
 
 
@@ -225,7 +226,7 @@ def test_one_to_many(zone_example_grid):
 
     np.testing.assert_equal(len(sc.zones), 2)
     np.testing.assert_equal(
-        set([z._conn_type for z in sc.zones]), set([None, zn.Connection.ONE_TO_MANY])
+        {z._conn_type for z in sc.zones}, {None, zn.Connection.ONE_TO_MANY}
     )
 
     expected_df = pd.DataFrame(

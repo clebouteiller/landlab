@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for landlab.components.overland_flow.KinwaveOverlandFlowModel
 
 last updated: 3/14/16
 """
+
 (_SHAPE, _SPACING, _ORIGIN) = ((10, 10), (25, 25), (0.0, 0.0))
 _ARGS = (_SHAPE, _SPACING, _ORIGIN)
 

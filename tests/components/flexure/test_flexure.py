@@ -4,29 +4,235 @@ Unit tests for landlab.components.flexure.flexure
 """
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal
 
 from landlab import RasterModelGrid
 from landlab.components import Flexure
+from landlab.components.flexure._ext.flexure2d import subside_loads
 
-(_SHAPE, _SPACING, _ORIGIN) = ((20, 20), (10e3, 10e3), (0.0, 0.0))
 
+@pytest.mark.parametrize("n", [4, 5, 6, 7, 8, 9, 10])
+@pytest.mark.parametrize("method", ["old", "new", "cython"])
+def test_one_load_bench(n, method):
+    load_0 = 1e9
 
-def test_method_names():
-    grid = RasterModelGrid((20, 20), xy_spacing=10e3)
+    size = 2**n + 1
+
+    grid = RasterModelGrid((size, size), xy_spacing=10.0)
     grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
-    assert Flexure(grid, method="airy").method == "airy"
-    assert Flexure(grid, method="flexure").method == "flexure"
+    flex = Flexure(grid, method="flexure")
+
+    loads = np.array([load_0])
+    row_col_of_load = np.array([2 ** (n - 1)]), np.array([2 ** (n - 1)])
+
+    w = grid.zeros(at="node").reshape(grid.shape)
+
+    if method == "old":
+        load_grid = grid.zeros(at="node").reshape(grid.shape)
+        load_grid[row_col_of_load] = load_0
+
+        func = flex.subside_loads_slow
+        args = (load_grid,)
+        kwds = {"out": w}
+    elif method == "new":
+        func = flex.subside_loads
+        args = (loads, row_col_of_load)
+        kwds = {"out": w}
+    else:
+        func = subside_loads
+        args = (
+            w,
+            flex._r,
+            loads,
+            row_col_of_load[0],
+            row_col_of_load[1],
+            flex.alpha,
+            flex.gamma_mantle,
+        )
+        kwds = {}
+
+    func(*args, **kwds)
+
+    assert_array_almost_equal(w, w[:, ::-1])
+    assert_array_almost_equal(w, w[::-1, :])
+
+    assert_array_equal(
+        np.unravel_index(np.argmax(w, axis=None), w.shape), (2 ** (n - 1), 2 ** (n - 1))
+    )
+
+
+@pytest.mark.parametrize("method", ["subside_loads", "subside_loads_slow"])
+def test_flexure_deflection_is_proportional_to_load(method):
+    n, load_0 = 8, 1e9
+
+    size = 2**n + 1
+
+    grid = RasterModelGrid((size, size), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    loads = grid.zeros(at="node").reshape(grid.shape)
+    loads[: size // 2, : size // 2] = load_0
+
+    expected = np.zeros((size, size))
+    getattr(flex, method)(loads, out=expected)
+
+    actual = np.zeros((size, size))
+    getattr(flex, method)(loads * 10.0, out=actual)
+
+    assert_array_almost_equal(actual, expected * 10.0)
+
+
+def test_update_bench():
+    n, load_0 = 10, 1e9
+
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    grid.at_node["lithosphere__overlying_pressure_increment"].reshape(grid.shape)[
+        2 ** (n - 1), 2 ** (n - 1)
+    ] = load_0
+    flex.update()
+    dz = flex.grid.at_node["lithosphere_surface__elevation_increment"].reshape(
+        grid.shape
+    )
+
+    assert_array_almost_equal(dz, dz[:, ::-1])
+    assert_array_almost_equal(dz, dz[::-1, :])
+
+
+def test_flexure_cmp():
+    n, load_0 = 10, 1e9
+
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    grid.at_node["lithosphere__overlying_pressure_increment"].reshape(grid.shape)[
+        2 ** (n - 1), 2 ** (n - 1)
+    ] = load_0
+    flex.update()
+    expected = flex.grid.at_node["lithosphere_surface__elevation_increment"].reshape(
+        grid.shape
+    )
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    loads = grid.zeros(at="node").reshape(grid.shape)
+    loads[2 ** (n - 1), 2 ** (n - 1)] = load_0
+
+    actual = np.zeros((n_rows, n_cols))
+    flex.subside_loads_slow(loads, out=actual)
+
+    assert_array_almost_equal(actual, expected)
+
+
+def test_subside_is_symetric():
+    n, load_0 = 10, 1e9
+
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    loads = [load_0] * 5
+    row_col_of_load = [
+        [2 ** (n - 1), 0, 0, n_rows - 1, n_rows - 1],
+        [2 ** (n - 1), 0, n_cols - 1, 0, n_cols - 1],
+    ]
+
+    dz = np.zeros((n_rows, n_cols))
+    flex.subside_loads(loads, row_col_of_load=row_col_of_load, out=dz)
+
+    assert_array_almost_equal(dz, dz[:, ::-1])
+    assert_array_almost_equal(dz, dz[::-1, :])
+
+
+def test_subside_negative_load():
+    n, load_0 = 10, 1e9
+
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    row_col_of_load = [
+        [2 ** (n - 1), 0, 0, n_rows - 1, n_rows - 1],
+        [2 ** (n - 1), 0, n_cols - 1, 0, n_cols - 1],
+    ]
+
+    actual = np.zeros((n_rows, n_cols))
+    flex.subside_loads([load_0] * 5, row_col_of_load=row_col_of_load, out=actual)
+
+    expected = np.zeros((n_rows, n_cols))
+    flex.subside_loads([-load_0] * 5, row_col_of_load=row_col_of_load, out=actual)
+
+    assert_array_almost_equal(actual, -expected)
+
+
+def test_max_deflection_under_load():
+    n, load_0 = 10, 1e9
+
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=10.0)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    flex = Flexure(grid, method="flexure")
+
+    loads = [load_0]
+    row_col_of_load = [[2 ** (n - 1)], [2 ** (n - 1)]]
+
+    dz = np.zeros((n_rows, n_cols))
+    flex.subside_loads(loads, row_col_of_load=row_col_of_load, out=dz)
+
+    assert_array_equal(
+        np.unravel_index(np.argmax(dz, axis=None), (n_rows, n_cols)),
+        (row_col_of_load[0][0], row_col_of_load[1][0]),
+    )
+
+
+@pytest.mark.parametrize("method", ["airy", "flexure"])
+def test_method_names(method):
+    grid = RasterModelGrid((20, 20), xy_spacing=1e3)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
+    assert Flexure(grid, method=method).method == method
+
+
+def test_method_bad_name():
+    grid = RasterModelGrid((20, 20), xy_spacing=1e3)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
     with pytest.raises(ValueError):
         Flexure(grid, method="bad-name")
 
 
-def test_eet_attribute():
-    grid = RasterModelGrid((20, 20), xy_spacing=10e3)
+@pytest.mark.parametrize("eet", [1e4, 1e3])
+def test_eet_attribute(eet):
+    grid = RasterModelGrid((20, 20), xy_spacing=1e3)
     grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
-    for val in (10e3, 1e3):
-        assert Flexure(grid, eet=val).eet == pytest.approx(val)
+    assert Flexure(grid, eet=eet).eet == pytest.approx(eet)
+
+
+@pytest.mark.parametrize("eet", [0.0, -1e3])
+def test_eet_bad_value(eet):
+    grid = RasterModelGrid((20, 20), xy_spacing=1e3)
+    grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
     with pytest.raises(ValueError):
-        assert Flexure(grid, eet=-10e3)
+        assert Flexure(grid, eet=eet)
 
 
 def test_youngs_attribute():
@@ -71,19 +277,6 @@ def test_var_units(flex):
     assert flex.var_units("lithosphere__overlying_pressure_increment") == "Pa"
 
 
-def test_grid_shape(flex):
-    assert flex.grid.number_of_node_rows == _SHAPE[0]
-    assert flex.grid.number_of_node_columns == _SHAPE[1]
-
-
-def test_grid_x_extent(flex):
-    assert flex.grid.extent[1] == (_SHAPE[1] - 1) * _SPACING[1]
-
-
-def test_grid_y_extent(flex):
-    assert flex.grid.extent[0] == (_SHAPE[0] - 1) * _SPACING[0]
-
-
 def test_field_getters(flex):
     for name in flex.grid["node"]:
         field = flex.grid["node"][name]
@@ -103,25 +296,29 @@ def test_field_initialized_to_zero(flex):
 
 
 def test_update():
-    n = 11
-    n_mid = (n - 1) // 2
-    i_mid = np.ravel_multi_index((n_mid, n_mid), (n, n))
+    n = 5
+    n_rows = 2**n + 1
+    n_cols = 2**n + 1
+
     load_0 = 1e9
 
-    grid = RasterModelGrid((n, n), xy_spacing=1e3)
+    grid = RasterModelGrid((n_rows, n_cols), xy_spacing=1e3)
     grid.add_zeros("lithosphere__overlying_pressure_increment", at="node")
     flex = Flexure(grid, method="flexure")
 
-    load = grid.at_node["lithosphere__overlying_pressure_increment"]
-    load[i_mid] = load_0
+    load = grid.at_node["lithosphere__overlying_pressure_increment"].reshape(grid.shape)
+    load[2 ** (n - 1), 2 ** (n - 1)] = load_0
 
     flex.update()
-    dz = flex.grid.at_node["lithosphere_surface__elevation_increment"].reshape((n, n))
+    dz = flex.grid.at_node["lithosphere_surface__elevation_increment"].reshape(
+        (n_rows, n_cols)
+    )
 
-    assert np.argmax(dz) == i_mid
-    assert dz[n_mid, n_mid] > 0.0
-    assert np.all(dz[:, n_mid::-1] == dz[:, n_mid:])
-    assert np.all(dz[n_mid::-1, :] == dz[n_mid:, :])
+    assert_array_almost_equal(dz, dz[:, ::-1])
+    assert_array_almost_equal(dz, dz[::-1, :])
+
+    assert_array_equal(np.argmax(dz), np.argmax(load))
+    assert dz[2 ** (n - 1), 2 ** (n - 1)] > 0.0
 
 
 def test_subside_loads():

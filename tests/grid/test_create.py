@@ -5,18 +5,19 @@ import numpy as np
 import pytest
 from hypothesis import given
 from hypothesis.strategies import text
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal
 
-from landlab import HexModelGrid, RadialModelGrid, RasterModelGrid
-from landlab.grid.create import (
-    _parse_args_kwargs,
-    add_boundary_conditions,
-    add_field_from_function,
-    as_list_of_tuples,
-    create_grid,
-    grid_from_dict,
-    norm_grid_description,
-)
+from landlab import HexModelGrid
+from landlab import RadialModelGrid
+from landlab import RasterModelGrid
+from landlab.grid.create import _parse_args_kwargs
+from landlab.grid.create import add_boundary_conditions
+from landlab.grid.create import add_field_from_function
+from landlab.grid.create import as_list_of_tuples
+from landlab.grid.create import create_grid
+from landlab.grid.create import grid_from_dict
+from landlab.grid.create import norm_grid_description
 
 SIMPLE_PARAMS_STR = """
 grid:
@@ -243,7 +244,7 @@ def test_bad_boundary_condition_functions(datadir):
 
 
 def test_parse_args_kwds():
-    assert _parse_args_kwargs(["foo", dict(bar="baz")]) == (("foo",), {"bar": "baz"})
+    assert _parse_args_kwargs(["foo", {"bar": "baz"}]) == (("foo",), {"bar": "baz"})
 
 
 def test_parse_args_kwds_without_kwds():
@@ -251,11 +252,11 @@ def test_parse_args_kwds_without_kwds():
 
 
 def test_parse_args_kwds_without_args():
-    assert _parse_args_kwargs([dict(bar="baz")]) == ((), {"bar": "baz"})
+    assert _parse_args_kwargs([{"bar": "baz"}]) == ((), {"bar": "baz"})
 
 
 def test_parse_args_kwds_with_multiple_args():
-    assert _parse_args_kwargs(["foo", "bar", dict(bar="baz")]) == (
+    assert _parse_args_kwargs(["foo", "bar", {"bar": "baz"}]) == (
         ("foo", "bar"),
         {"bar": "baz"},
     )
@@ -263,7 +264,7 @@ def test_parse_args_kwds_with_multiple_args():
 
 def test_parse_args_kwds_as_dict():
     assert _parse_args_kwargs({"args": "foo", "bar": "baz"}) == _parse_args_kwargs(
-        ["foo", dict(bar="baz")]
+        ["foo", {"bar": "baz"}]
     )
     assert _parse_args_kwargs({"args": ["foo"], "bar": "baz"}) == _parse_args_kwargs(
         {"args": "foo", "bar": "baz"}
@@ -292,7 +293,7 @@ def test_grid_from_dict_raster(xy_of_lower_left, xy_spacing):
 @pytest.mark.parametrize("node_layout", ("hex", "rect", None))
 @pytest.mark.parametrize("xy_of_lower_left", ((-10.0, 100.0), None))
 def test_grid_from_dict_hex(orientation, node_layout, xy_of_lower_left):
-    kwds = dict(shape=(3, 4))
+    kwds = {"shape": (3, 4)}
     if orientation is not None:
         kwds["orientation"] = orientation
     if node_layout is not None:
@@ -322,10 +323,10 @@ def test_grid_from_dict_radial(xy_of_center):
 @pytest.mark.parametrize(
     "to_list",
     (
-        lambda l: ((k, v) for k, v in l),
-        lambda l: tuple((k, v) for k, v in l),
-        lambda l: [[k, v] for k, v in l],
-        lambda l: [{k: v} for k, v in l],
+        lambda items: ((k, v) for k, v in items),
+        lambda items: tuple((k, v) for k, v in items),
+        lambda items: [[k, v] for k, v in items],
+        lambda items: [{k: v} for k, v in items],
         OrderedDict,
     ),
 )
@@ -410,7 +411,7 @@ grids:
 @pytest.mark.parametrize("at", ("node", "link", "patch", "corner", "face", "cell"))
 def test_add_field_from_function_constant(at, to_list):
     grid = RasterModelGrid((20, 30))
-    function = to_list(("constant", dict(value=1.0)))
+    function = to_list(("constant", {"value": 1.0}))
     add_field_from_function(grid, "z", function, at=at)
     assert_array_almost_equal(grid[at]["z"], 1.0)
 
@@ -418,17 +419,17 @@ def test_add_field_from_function_constant(at, to_list):
 @pytest.mark.parametrize("at", ("node", "link", "patch", "corner", "face", "cell"))
 def test_add_field_from_function_constant_as_dict(at):
     grid = RasterModelGrid((20, 30))
-    add_field_from_function(grid, "z", {"constant": dict(value=10.0)}, at=at)
+    add_field_from_function(grid, "z", {"constant": {"value": 10.0}}, at=at)
     assert_array_almost_equal(grid[at]["z"], 10.0)
 
 
 @pytest.mark.parametrize(
     "to_list",
     (
-        lambda l: ((k, v) for k, v in l),
-        lambda l: tuple((k, v) for k, v in l),
-        lambda l: [[k, v] for k, v in l],
-        lambda l: [{k: v} for k, v in l],
+        lambda items: ((k, v) for k, v in items),
+        lambda items: tuple((k, v) for k, v in items),
+        lambda items: [[k, v] for k, v in items],
+        lambda items: [{k: v} for k, v in items],
     ),
 )
 @pytest.mark.parametrize("at", ("node", "link", "patch", "corner", "face", "cell"))
@@ -436,11 +437,11 @@ def test_add_field_from_function_with_list(at, to_list):
     grid = RasterModelGrid((20, 30))
     functions = to_list(
         [
-            ("constant", dict(value=1.0)),
-            ("constant", dict(value=2.0)),
-            ("constant", dict(value=3.0)),
-            ("constant", dict(value=4.0)),
-            ("constant", dict(value=5.0)),
+            ("constant", {"value": 1.0}),
+            ("constant", {"value": 2.0}),
+            ("constant", {"value": 3.0}),
+            ("constant", {"value": 4.0}),
+            ("constant", {"value": 5.0}),
         ]
     )
     add_field_from_function(grid, "z", functions, at=at)
@@ -450,10 +451,10 @@ def test_add_field_from_function_with_list(at, to_list):
 @pytest.mark.parametrize(
     "to_list",
     (
-        lambda l: ((k, v) for k, v in l),
-        lambda l: tuple((k, v) for k, v in l),
-        lambda l: [[k, v] for k, v in l],
-        lambda l: [{k: v} for k, v in l],
+        lambda items: ((k, v) for k, v in items),
+        lambda items: tuple((k, v) for k, v in items),
+        lambda items: [[k, v] for k, v in items],
+        lambda items: [{k: v} for k, v in items],
     ),
 )
 def test_add_boundary_conditions(to_list):
@@ -510,7 +511,7 @@ def test_field_units(units):
     grid = create_grid(params)
     assert grid.at_node["topographic__elevation"] == pytest.approx(0.0)
     assert grid.at_node.units["topographic__elevation"] == units
-    assert grid.field_units("node", "topographic__elevation") == units
+    assert grid.field_units("topographic__elevation", at="node") == units
 
 
 @given(units=text())
@@ -537,4 +538,4 @@ def test_repeated_units(units):
     grid = create_grid(params)
     assert grid.at_node["topographic__elevation"] == pytest.approx(0.0)
     assert grid.at_node.units["topographic__elevation"] == units
-    assert grid.field_units("node", "topographic__elevation") == units
+    assert grid.field_units("topographic__elevation", at="node") == units

@@ -1,25 +1,25 @@
 #! /usr/bin/env python
+import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension
+from setuptools import setup
 
-import os
-import re
+with open("cython-files.txt") as fp:
+    cython_files = {fname.strip() for fname in fp.readlines()}
 
-import pkg_resources
-from setuptools import Extension, setup
+ext_modules = cythonize(
+    [
+        Extension(
+            path[4:-4].replace("/", "."),
+            [path],
+            define_macros=[("NPY_NO_DEPRECATED_API", "1")],
+        )
+        for path in cython_files
+    ],
+    compiler_directives={"embedsignature": True, "language_level": 3},
+)
 
-
-numpy_incl = pkg_resources.resource_filename("numpy", "core/include")
-
-
-def find_extensions(path="."):
-    extensions = []
-    for root, _dirs, files in os.walk(os.path.normpath(path)):
-        extensions += [
-            os.path.join(root, fname) for fname in files if fname.endswith(".pyx")
-        ]
-    return [
-        Extension(re.sub(re.escape(os.path.sep), ".", ext[: -len(".pyx")]), [ext])
-        for ext in extensions
-    ]
-
-
-setup(include_dirs=[numpy_incl], ext_modules=find_extensions("landlab"))
+setup(
+    include_dirs=[np.get_include()],
+    ext_modules=ext_modules,
+)

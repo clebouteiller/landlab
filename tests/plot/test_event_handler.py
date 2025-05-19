@@ -8,12 +8,12 @@ from matplotlib.backend_bases import Event
 from matplotlib.pyplot import gcf
 from numpy.testing import assert_equal
 
-from landlab import RasterModelGrid, imshow_grid
+from landlab import RasterModelGrid
+from landlab import imshow_grid
 from landlab.plot.event_handler import query_grid_on_button_press
 
 
 def test_query_grid_on_button_press():
-
     rmg = RasterModelGrid((5, 5))
     imshow_grid(rmg, rmg.nodes, cmap="RdYlBu")
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for landlab.data_record.data_record.DataRecord
 Dimension = time
@@ -33,7 +32,7 @@ def test_permitted_locations(dr_time):
 
 
 def test_coordinates(dr_time):
-    assert len(dr_time.dataset.dims) == 1
+    assert len(dr_time.dataset.sizes) == 1
     assert list(dr_time.dataset.time.values) == list(np.array(time))
     assert list(dr_time.time_coordinates) == list(np.array(time))
     # properties:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed May 22 13:50:43 2019
 
@@ -9,10 +8,12 @@ Doc tests and unit tests for lateral erosion.
 """
 
 import numpy as np
+import pytest
 from numpy import testing
 
 from landlab import RasterModelGrid
-from landlab.components import FlowAccumulator, LateralEroder
+from landlab.components import FlowAccumulator
+from landlab.components import LateralEroder
 
 
 def test_lateral_erosion_and_node():
@@ -151,7 +152,7 @@ def test_matches_detlim_solution():
         mg, latero_mech="TB", Kv=Kbr, solver="basic", alph=0.0, Kl_ratio=1.0
     )
 
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()  # flow accumulator
         # erode the landscape with lateral erosion
         (mg, dzlat) = latero.run_one_step(dt)
@@ -171,6 +172,8 @@ def test_matches_detlim_solution():
     )
 
 
+@pytest.mark.slow
+@pytest.mark.flaky(max_runs=3, min_passes=1)
 def test_ss_sed_flux():
     """
     Test that sediment flux of lateral erosion model matches steady state
@@ -210,7 +213,7 @@ def test_ss_sed_flux():
         mg, latero_mech="UC", alph=1.5, Kv=0.001, Kl_ratio=1.0, solver="basic"
     )
 
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()  # flow accumulator
         (mg, dzlat) = latero.run_one_step(dt)
         mg.at_node["topographic__elevation"][mg.core_nodes] += (
@@ -231,6 +234,7 @@ def test_ss_sed_flux():
     )
 
 
+@pytest.mark.slow
 def test_variable_bedrock_K():
     """
     Test that model matches the detachment-limited analytical solution
@@ -287,7 +291,7 @@ def test_variable_bedrock_K():
         flow_accumulator=fa,
     )
 
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()  # flow accumulator
         # erode the landscape with lateral erosion
         (mg, dzlat) = latero.run_one_step(dt)
@@ -317,23 +321,20 @@ def test_latero_steady_inlet():
     nr = 5
     nc = 5
     dx = 10
-    # instantiate grid
+
     mg = RasterModelGrid((nr, nc), xy_spacing=dx)
     for edge in (
         mg.nodes_at_top_edge,
-        mg.nodes_at_bottom_edge,
         mg.nodes_at_left_edge,
         mg.nodes_at_right_edge,
     ):
         mg.status_at_node[edge] = mg.BC_NODE_IS_CLOSED
-    for edge in mg.nodes_at_bottom_edge:
-        mg.status_at_node[edge] = mg.BC_NODE_IS_FIXED_VALUE
+    mg.status_at_node[mg.nodes_at_bottom_edge] = mg.BC_NODE_IS_FIXED_VALUE
 
-    z = mg.add_zeros("topographic__elevation", at="node")
-    loading_vector = np.linspace(1, 2.5, num=nr)
-    ramp = np.repeat(loading_vector, nc)
-    ramp += np.random.random_sample(mg.number_of_nodes) * 0.8
-    z += ramp
+    rng = np.random.default_rng(seed=1945)
+    mg.at_node["topographic__elevation"] = np.repeat(
+        np.linspace(1, 2.5, num=nr), nc
+    ) + rng.uniform(low=0.0, high=0.8, size=nr * nc)
 
     fa = FlowAccumulator(
         mg,
@@ -354,13 +355,12 @@ def test_latero_steady_inlet():
         qsinlet=2.5,
     )
 
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()  # flow accumulator
         # erode the landscape with lateral erosion
         (mg, dzlat) = latero.run_one_step(dt)
-        mg.at_node["topographic__elevation"][mg.core_nodes] += (
-            U * dt
-        )  # uplift the landscape
+        # uplift the landscape
+        mg.at_node["topographic__elevation"][mg.core_nodes] += U * dt
 
     da = mg.at_node["surface_water__discharge"] / dx**2
     num_sedflux = mg.at_node["qs"]

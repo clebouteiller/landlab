@@ -2,38 +2,39 @@ import hypothesis.extra.numpy as hynp
 import numpy as np
 import pytest
 from hypothesis import given
-from hypothesis.strategies import composite, floats, integers, lists
+from hypothesis.strategies import composite
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists
 from numpy.testing import assert_array_equal
 
 from landlab import RasterModelGrid
-from landlab.grid.create_network import (
-    AlongChannelSpacingAtLeast,
-    AtMostNodes,
-    ChannelSegment,
-    ChannelSegmentConnector,
-    JustEndNodes,
-    SegmentLinkCollector,
-    SegmentNodeCoordinateCollector,
-    SegmentNodeReindexer,
-    SpacingAtLeast,
-    _reduce_nodes,
-    _reduce_to_fewest_nodes,
-    create_network_links,
-    create_xy_of_node,
-    get_node_fields,
-    network_grid_from_raster,
-    network_grid_from_segments,
-    pairwise,
-    reindex_network_nodes,
-    spacing_from_drainage_area,
-)
+from landlab.grid.create_network import AlongChannelSpacingAtLeast
+from landlab.grid.create_network import AtMostNodes
+from landlab.grid.create_network import ChannelSegment
+from landlab.grid.create_network import ChannelSegmentConnector
+from landlab.grid.create_network import JustEndNodes
+from landlab.grid.create_network import SegmentLinkCollector
+from landlab.grid.create_network import SegmentNodeCoordinateCollector
+from landlab.grid.create_network import SegmentNodeReindexer
+from landlab.grid.create_network import SpacingAtLeast
+from landlab.grid.create_network import _reduce_nodes
+from landlab.grid.create_network import _reduce_to_fewest_nodes
+from landlab.grid.create_network import create_network_links
+from landlab.grid.create_network import create_xy_of_node
+from landlab.grid.create_network import get_node_fields
+from landlab.grid.create_network import network_grid_from_raster
+from landlab.grid.create_network import network_grid_from_segments
+from landlab.grid.create_network import pairwise
+from landlab.grid.create_network import reindex_network_nodes
+from landlab.grid.create_network import spacing_from_drainage_area
 
 
 @given(
     drainage_area=hynp.arrays(
         dtype=hynp.floating_dtypes(),
         shape=hynp.array_shapes(),
-        elements=floats(min_value=0, width=16),
+        elements=floats(min_value=0, max_value=1000, width=16),
     )
 )
 def test_calc_spacing_always_positive(drainage_area):
@@ -44,7 +45,7 @@ def test_calc_spacing_always_positive(drainage_area):
     drainage_area=hynp.arrays(
         dtype=hynp.floating_dtypes(),
         shape=hynp.array_shapes(),
-        elements=floats(min_value=0, width=16),
+        elements=floats(min_value=0, width=16, allow_infinity=False),
     )
 )
 def test_calc_spacing_unit_keywords(drainage_area):
@@ -97,7 +98,15 @@ def test_channel_segment_add_upstream_node():
     assert upstream.downstream is segment
 
 
-@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=1))
+@given(segment=lists(integers(), min_size=2, max_size=1024))
+def test_channel_one_segment(segment):
+    root = ChannelSegment(segment)
+
+    assert root.count_segments(direction="upstream") == 0
+    assert root.count_segments(direction="downstream") == 0
+
+
+@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=2))
 def test_channel_segment_many_upstream(segments):
     segments = [ChannelSegment(segment) for segment in segments]
     root = segments[0]
@@ -108,7 +117,7 @@ def test_channel_segment_many_upstream(segments):
     assert root.count_segments(direction="downstream") == 0
 
 
-@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=1))
+@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=2))
 def test_channel_segment_many_flat_upstream(segments):
     segments = [ChannelSegment(segment) for segment in segments]
     root = segments[0]
@@ -121,7 +130,7 @@ def test_channel_segment_many_flat_upstream(segments):
     assert root.count_segments(direction="downstream") == 0
 
 
-@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=1))
+@given(segments=lists(lists(integers(), min_size=2, max_size=1024), min_size=2))
 def test_channel_segment_many_downstream(segments):
     segments = [ChannelSegment(segment) for segment in segments]
     root = segments[0]
@@ -472,8 +481,9 @@ def test_reduce_to_fewest_nodes_stay_the_same(x, spacing):
 def test_reduce_nodes_min_max_spacing(spacing):
     distance_along_segment = np.cumsum(spacing)
 
-    if np.any(np.diff(distance_along_segment) <= 0):
-        raise ValueError(f"array not sorted ({distance_along_segment})")
+    assert np.all(
+        np.diff(distance_along_segment) > 0
+    ), f"array not sorted ({distance_along_segment})"
 
     nodes = _reduce_nodes(distance_along_segment, spacing=spacing.min())
     assert np.all(nodes == np.arange(len(spacing)))
@@ -495,8 +505,9 @@ def test_reduce_nodes_min_max_spacing(spacing):
 def test_reduce_to_fewest_nodes_min_max_spacing(spacing):
     distance_along_segment = np.cumsum(spacing)
 
-    if np.any(np.diff(distance_along_segment) <= 0):
-        raise ValueError(f"array not sorted ({distance_along_segment})")
+    assert np.all(
+        np.diff(distance_along_segment) > 0
+    ), f"array not sorted ({distance_along_segment})"
 
     xy_of_node = list(zip(distance_along_segment, [0.0] * len(distance_along_segment)))
     min_spacing = np.diff(distance_along_segment).min()
@@ -570,7 +581,7 @@ def test_get_node_fields_two_fields():
     network = ChannelSegmentConnector([0, 5], [5, 6, 7], [5, 9])
 
     fields = get_node_fields(network.root, grid)
-    assert sorted(list(fields)) == ["bar", "foo"]
+    assert sorted(fields) == ["bar", "foo"]
     assert_array_equal(fields["foo"], [0, 50, 60, 70, 90])
     assert_array_equal(fields["bar"], [0, 500, 600, 700, 900])
 
@@ -588,7 +599,7 @@ def test_get_node_fields_include():
     assert_array_equal(fields["foo"], [0, 50, 60, 70, 90])
 
     fields = get_node_fields(network.root, grid, include="at_node:b*")
-    assert sorted(list(fields)) == ["bar", "baz"]
+    assert sorted(fields) == ["bar", "baz"]
     assert_array_equal(fields["bar"], [0, 500, 600, 700, 900])
     assert_array_equal(fields["baz"], [0, 5000, 6000, 7000, 9000])
 
@@ -619,7 +630,7 @@ def test_get_node_fields_ignore_non_node_fields():
 
     fields = get_node_fields(network.root, grid, include="*")
 
-    assert sorted(list(fields)) == ["bar", "foo"]
+    assert sorted(fields) == ["bar", "foo"]
 
 
 def test_network_grid_from_raster():

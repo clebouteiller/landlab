@@ -1,0 +1,8 @@
+# Requirements extracted from pyproject.toml
+# [project.optional-dependencies] testing
+coverage
+flaky
+hypothesis
+pytest
+pytest-datadir
+pytest-xdist

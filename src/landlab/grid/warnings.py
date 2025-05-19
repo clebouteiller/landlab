@@ -1,0 +1,32 @@
+import os
+
+from ..core.messages import deprecation_message
+
+
+class DeprecatedSignature(DeprecationWarning):
+    msg = "You are using a deprecated calling signature."
+
+    def __init__(self, name, old=None, new=None):
+        self._name = name
+        self._old = old
+        self._new = new
+
+        if old:
+            self._old = self._construct_call(name, self._old[0], self._old[1])
+        if new:
+            self._new = self._construct_call(name, self._new[0], self._new[1])
+
+    @staticmethod
+    def _construct_call(name, args, kwds):
+        signature = ", ".join(
+            [repr(arg) for arg in args] + [f"{k}={repr(v)}" for k, v in kwds.items()]
+        )
+        return f"{name}({signature})"
+
+    def __str__(self):
+        if self._new:
+            use = f">>> grid = {self._new}"
+        else:
+            use = None
+
+        return os.linesep + deprecation_message(self.msg, use=use)

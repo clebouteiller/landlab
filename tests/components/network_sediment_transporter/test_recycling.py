@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from landlab.components import FlowDirectorSteepest, NetworkSedimentTransporter
+from landlab.components import FlowDirectorSteepest
+from landlab.components import NetworkSedimentTransporter
 from landlab.data_record import DataRecord
 from landlab.grid.network import NetworkModelGrid
 
@@ -69,7 +69,7 @@ def test_recycling():
 
     timesteps = 8
 
-    for t in range(0, (timesteps * dt), dt):
+    for _ in range(0, (timesteps * dt), dt):
         # RECYCLE sediment: what left the network gets added back in at top.
         parcels.dataset.location_in_link.values[
             parcels.dataset.element_id.values

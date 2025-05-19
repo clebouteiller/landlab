@@ -4,13 +4,14 @@ import time
 from matplotlib.pyplot import axis
 from numpy import random
 
-from landlab.ca.celllab_cts import CAPlotter, Transition
+from landlab.ca.celllab_cts import CAPlotter
+from landlab.ca.celllab_cts import Transition
 from landlab.io.native_landlab import save_grid
 
 _DEBUG = False
 
 
-class CTSModel(object):
+class CTSModel:
     """
     Implement a generic CellLab-CTS model.
 
@@ -28,9 +29,8 @@ class CTSModel(object):
         run_duration=1.0,
         output_interval=1.0e99,
         plot_every_transition=False,
-        **kwds
+        **kwds,
     ):
-
         self.initialize(
             grid_size,
             report_interval,
@@ -41,7 +41,7 @@ class CTSModel(object):
             run_duration,
             output_interval,
             plot_every_transition,
-            **kwds
+            **kwds,
         )
 
     def initialize(
@@ -55,9 +55,8 @@ class CTSModel(object):
         run_duration=1.0,
         output_interval=1.0e99,
         plot_every_transition=False,
-        **kwds
+        **kwds,
     ):
-
         # Remember the clock time, and calculate when we next want to report
         # progress.
         self.current_real_time = time.time()
@@ -170,7 +169,6 @@ class CTSModel(object):
         axis("off")
 
     def run_for(self, dt):
-
         self.ca.run(self.ca.current_time + dt, self.ca.node_state)
 
 

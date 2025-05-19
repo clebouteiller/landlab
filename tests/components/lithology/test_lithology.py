@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Mon Apr 30 09:17:36 2018
 
@@ -11,7 +10,8 @@ from numpy.testing import assert_array_equal  # , assert_array_almost_equal
 
 from landlab import RasterModelGrid
 from landlab.bmi import wrap_as_bmi
-from landlab.components import LithoLayers, Lithology
+from landlab.components import LithoLayers
+from landlab.components import Lithology
 
 
 def test_lithology_as_bmi():

@@ -2,6 +2,10 @@ name: Documentation
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
     build:
         name: Build documentation
@@ -11,29 +15,30 @@ jobs:
         if:
           github.event_name == 'push' || github.event.pull_request.head.repo.full_name !=
           github.repository
-    
+
         runs-on: ubuntu-latest
-        
+
         defaults:
           run:
             shell: bash -l {0}
 
         steps:
-          - uses: actions/checkout@v2
-          - uses: conda-incubator/setup-miniconda@v2
+          - uses: actions/checkout@v4
+          - uses: conda-incubator/setup-miniconda@v3
             with:
+              python-version: 3.12
+              miniforge-variant: Miniforge3
+              miniforge-version: latest
               auto-update-conda: true
-              python-version: 3.8
-              channels: conda-forge
-              channel-priority: true
 
-          - name: Show conda installation info
+          - name: install and check pandoc
             run: |
-              conda info
-              conda list
-    
+              conda install pandoc -c conda-forge
+              pandoc --help
+              pandoc --version
+
           - name: Install dependencies
-            run: pip install -e ".[docs]"
+            run: pip install nox
 
           - name: Build documentation
-            run: make -C docs clean html
+            run: nox -s docs-build

@@ -2,8 +2,10 @@ import numpy as np
 import pytest
 from numpy import testing
 
-from landlab import HexModelGrid, RasterModelGrid
-from landlab.components import FlowAccumulator, Space
+from landlab import HexModelGrid
+from landlab import RasterModelGrid
+from landlab.components import FlowAccumulator
+from landlab.components import Space
 
 
 def test_route_to_multiple_error_raised():
@@ -247,7 +249,7 @@ def test_matches_detachment_solution():
     )
 
     # ... and run it to steady state (2000x1-year timesteps).
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()
         sp.run_one_step(dt=dt)
         z[mg.core_nodes] += U * dt  # m
@@ -336,13 +338,13 @@ def test_matches_transport_solution():
     )
 
     # ... and run it to steady state (5000x1-year timesteps).
-    for i in range(5000):
+    for _ in range(5000):
         fa.run_one_step()
         sp.run_one_step(dt=dt)
         br[mg.core_nodes] += U * dt  # m
-        soil[
-            0
-        ] = 100.0  # enforce constant soil depth at boundary to keep lowering steady
+        soil[0] = (
+            100.0  # enforce constant soil depth at boundary to keep lowering steady
+        )
         z[:] = br[:] + soil[:]
 
     # compare numerical and analytical slope solutions
@@ -451,7 +453,7 @@ def test_matches_bedrock_alluvial_solution():
     )
 
     # ... and run it to steady state (10000x1-year timesteps).
-    for i in range(10000):
+    for _ in range(10000):
         fa.run_one_step()
         sp.run_one_step(dt=dt)
         br[mg.core_nodes] += U * dt  # m
@@ -492,6 +494,7 @@ def test_matches_bedrock_alluvial_solution():
     )
 
 
+@pytest.mark.slow
 def test_can_run_with_hex():
     """Test that model can run with hex model grid."""
 
@@ -524,7 +527,7 @@ def test_can_run_with_hex():
     )
 
     # ... and run it to steady state.
-    for i in range(2000):
+    for _ in range(2000):
         fa.run_one_step()
         sp.run_one_step(dt=dt)
         z[mg.core_nodes] += U * dt

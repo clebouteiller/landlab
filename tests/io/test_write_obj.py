@@ -5,7 +5,8 @@ import pathlib
 
 import pytest
 
-from landlab import HexModelGrid, RasterModelGrid
+from landlab import HexModelGrid
+from landlab import RasterModelGrid
 from landlab.io import write_obj
 
 LITTLE_HEX_OBJ = """# landlabgrid
@@ -57,7 +58,7 @@ def test_write_to_filelike(tmpdir):
     with tmpdir.as_cwd():
         with open("test_quad.obj", "w") as fp:
             write_obj(fp, grid)
-        with open("test_quad.obj", "r") as fp:
+        with open("test_quad.obj") as fp:
             assert fp.read() == LITTLE_RAST_OBJ
 
 
@@ -70,7 +71,7 @@ def test_write_hex_to_path(tmpdir, fname):
     with tmpdir.as_cwd():
         actual = write_obj(fname, grid)
         assert actual == fname
-        with open(fname, "r") as fp:
+        with open(fname) as fp:
             assert fp.read() == LITTLE_HEX_OBJ
 
 
@@ -81,7 +82,7 @@ def test_write_raster(tmpdir):
 
     with tmpdir.as_cwd():
         write_obj("test_quad.obj", grid)
-        with open("test_quad.obj", "r") as fp:
+        with open("test_quad.obj") as fp:
             assert fp.read() == LITTLE_RAST_OBJ
 
 
@@ -92,7 +93,7 @@ def test_field_name(tmpdir):
 
     with tmpdir.as_cwd():
         write_obj("test_quad.obj", grid, field_for_z="z")
-        with open("test_quad.obj", "r") as fp:
+        with open("test_quad.obj") as fp:
             assert fp.read() == LITTLE_RAST_OBJ
 
 
@@ -109,5 +110,5 @@ def test_clobber(tmpdir):
             write_obj("test_quad.obj", grid)
 
         write_obj("test_quad.obj", grid, clobber=True)
-        with open("test_quad.obj", "r") as fp:
+        with open("test_quad.obj") as fp:
             assert fp.read() == LITTLE_RAST_OBJ

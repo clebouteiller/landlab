@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from landlab import RasterModelGrid
-from landlab.components import DepressionFinderAndRouter, FlowAccumulator
+from landlab.components import DepressionFinderAndRouter
+from landlab.components import FlowAccumulator
 
 XX = RasterModelGrid.BAD_INDEX
 
@@ -127,7 +128,7 @@ def dans_grid3():
     fr = FlowAccumulator(mg, flow_director="D8")
     lf = DepressionFinderAndRouter(mg)
 
-    class DansGrid(object):
+    class DansGrid:
         pass
 
     dans_grid = DansGrid()
@@ -180,7 +181,7 @@ def d4_grid():
     lfD8 = DepressionFinderAndRouter(mg1, routing="D8")
     lfD4 = DepressionFinderAndRouter(mg2, routing="D4")
 
-    class DansGrid(object):
+    class DansGrid:
         pass
 
     d4_grid = DansGrid()

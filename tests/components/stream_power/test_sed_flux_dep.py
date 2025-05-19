@@ -4,13 +4,15 @@ Test the sed dep eroder by turning it over a few times. No attempt has been
 made to ensure the solution is stable. Takes a topo already output and runs it
 a few more times, to ensure repeatability.
 """
+
 import os
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from landlab import RasterModelGrid
-from landlab.components import FlowAccumulator, SedDepEroder
+from landlab.components import FlowAccumulator
+from landlab.components import SedDepEroder
 
 _THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -48,7 +50,7 @@ def test_sed_dep():
         g=9.81,
     )
 
-    for i in range(nt):
+    for _ in range(nt):
         mg.at_node["topographic__elevation"][mg.core_nodes] += uplift_per_step
         mg = fr.run_one_step()
         mg, _ = sde.run_one_step(dt)
@@ -89,7 +91,7 @@ def test_sed_dep_new():
     dt = 100.0
     up = 0.05
 
-    for i in range(10):
+    for _ in range(10):
         fr.run_one_step()
         sde.run_one_step(dt)
         z[mg.core_nodes] += 20.0 * up

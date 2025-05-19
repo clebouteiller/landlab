@@ -3,12 +3,11 @@ import inspect
 import numpy as np
 import pytest
 from pytest import approx
-from scipy.spatial import Delaunay, Voronoi
+from scipy.spatial import Delaunay
+from scipy.spatial import Voronoi
 
-from landlab.graph.voronoi.voronoi_to_graph import (
-    VoronoiDelaunay,
-    VoronoiDelaunayToGraph,
-)
+from landlab.graph.voronoi.voronoi_to_graph import VoronoiDelaunay
+from landlab.graph.voronoi.voronoi_to_graph import VoronoiDelaunayToGraph
 
 XY_OF_NODE = {
     "rect-horizontal-3-3": [
@@ -106,6 +105,9 @@ def test_voronoi_name_mapping(xy_of_hex):
     delaunay = Delaunay(xy_of_hex)
     graph = VoronoiDelaunay(xy_of_hex)
 
+    voronoi.regions, voronoi.point_region = VoronoiDelaunay._remove_empty_regions(
+        voronoi.regions, voronoi.point_region
+    )
     assert np.all(graph.x_of_node == approx(voronoi.points[:, 0]))
     assert np.all(graph.y_of_node == approx(voronoi.points[:, 1]))
 
@@ -164,7 +166,7 @@ def test_of_array_is_float(hex_graph, of_property):
     ],
 )
 def test_element_count_without_perimeter_nodes(hex_graph, element, expected):
-    assert getattr(hex_graph, "number_of_{0}".format(element)) == expected
+    assert getattr(hex_graph, f"number_of_{element}") == expected
 
 
 @pytest.mark.parametrize(
@@ -181,7 +183,7 @@ def test_element_count_without_perimeter_nodes(hex_graph, element, expected):
 def test_element_count_with_perimeter_nodes(xy_of_hex, element, expected):
     perimeter_links = [[0, 1], [1, 2], [2, 5], [5, 8], [8, 7], [7, 6], [6, 3], [3, 0]]
     graph = VoronoiDelaunayToGraph(xy_of_hex, perimeter_links=perimeter_links)
-    assert getattr(graph, "number_of_{0}".format(element)) == expected
+    assert getattr(graph, f"number_of_{element}") == expected
 
 
 @pytest.mark.parametrize("at", ("node", "link", "cell", "corner", "face", "cell"))
@@ -193,7 +195,7 @@ def test_compact_ids_without_perimeter_nodes(hex_graph, at):
     ids = ids[ids >= 0]
 
     assert ids[0] >= 0
-    assert ids[-1] <= hex_graph._mesh.dims[at]
+    assert ids[-1] <= hex_graph._mesh.sizes[at]
 
 
 @pytest.mark.parametrize("at", ("node", "link", "cell", "corner", "face", "cell"))
@@ -208,7 +210,7 @@ def test_compact_ids_with_perimeter_nodes(xy_of_hex, at):
     ids = ids[ids >= 0]
 
     assert ids[0] >= 0
-    assert ids[-1] <= graph._mesh.dims[at]
+    assert ids[-1] <= graph._mesh.sizes[at]
 
 
 @pytest.mark.parametrize("at", ["node", "link", "patch", "corner", "face", "cell"])

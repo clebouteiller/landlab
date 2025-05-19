@@ -8,7 +8,8 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from landlab import RasterModelGrid
-from landlab.io.netcdf import NotRasterGridError, write_netcdf
+from landlab.io.netcdf import NotRasterGridError
+from landlab.io.netcdf import write_netcdf
 from landlab.io.netcdf.read import _get_raster_spacing
 
 _TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -56,7 +57,7 @@ def test_netcdf_write_uint8_field_netcdf4(tmpdir):
 
 def test_netcdf_write_as_netcdf3_64bit(tmpdir):
     """Test write_netcdf with output format 64-bit netcdf3."""
-    from scipy.io import netcdf
+    from scipy.io import netcdf_file
 
     field = RasterModelGrid((4, 3))
     field.add_field("topographic__elevation", np.arange(12.0), at="node")
@@ -65,7 +66,7 @@ def test_netcdf_write_as_netcdf3_64bit(tmpdir):
     with tmpdir.as_cwd():
         write_netcdf("test.nc", field, format="NETCDF3_64BIT")
 
-        f = netcdf.netcdf_file("test.nc", "r")
+        f = netcdf_file("test.nc", "r")
 
         for name in ["topographic__elevation", "uplift_rate"]:
             assert name in f.variables
@@ -78,7 +79,7 @@ def test_netcdf_write_as_netcdf3_64bit(tmpdir):
 
 def test_netcdf_write_as_netcdf3_classic(tmpdir):
     """Test write_netcdf with output format classic netcdf3."""
-    from scipy.io import netcdf
+    from scipy.io import netcdf_file
 
     field = RasterModelGrid((4, 3))
     field.add_field("topographic__elevation", np.arange(12.0), at="node")
@@ -87,7 +88,7 @@ def test_netcdf_write_as_netcdf3_classic(tmpdir):
     with tmpdir.as_cwd():
         write_netcdf("test.nc", field, format="NETCDF3_CLASSIC")
 
-        f = netcdf.netcdf_file("test.nc", "r")
+        f = netcdf_file("test.nc", "r")
 
         for name in ["topographic__elevation", "uplift_rate"]:
             assert name in f.variables
@@ -107,13 +108,13 @@ def test_netcdf_write(tmpdir):
         write_netcdf("test.nc", field, format="NETCDF4")
         root = nc.Dataset("test.nc", "r", format="NETCDF4")
 
-        assert set(root.dimensions) == set(["ni", "nj", "nt"])
+        assert set(root.dimensions) == {"ni", "nj", "nt"}
         assert len(root.dimensions["ni"]) == 3
         assert len(root.dimensions["nj"]) == 4
         assert len(root.dimensions["nt"]) == 1
         assert root.dimensions["nt"].isunlimited()
 
-        assert set(root.variables) == set(["x", "y", "topographic__elevation"])
+        assert set(root.variables) == {"x", "y", "topographic__elevation"}
 
         assert_array_equal(
             np.reshape(root.variables["x"], -1),
@@ -286,16 +287,19 @@ def test_netcdf_write_at_cells(tmpdir):
                 np.reshape(root.variables[name], -1), field.at_cell[name]
             )
 
-        assert set(root.dimensions) == set(["nv", "ni", "nj", "nt"])
+        assert set(root.dimensions) == {"nv", "ni", "nj", "nt"}
         assert len(root.dimensions["nv"]) == 4
         assert len(root.dimensions["ni"]) == 1
         assert len(root.dimensions["nj"]) == 2
         assert len(root.dimensions["nt"]) == 1
         assert root.dimensions["nt"].isunlimited()
 
-        assert set(root.variables) == set(
-            ["x_bnds", "y_bnds", "topographic__elevation", "uplift_rate"]
-        )
+        assert set(root.variables) == {
+            "x_bnds",
+            "y_bnds",
+            "topographic__elevation",
+            "uplift_rate",
+        }
         root.close()
 
 

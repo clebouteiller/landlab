@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from landlab import ExampleData
-from landlab.components import FlowDirectorSteepest, NetworkSedimentTransporter
+from landlab.components import FlowDirectorSteepest
+from landlab.components import NetworkSedimentTransporter
 from landlab.data_record import DataRecord
 from landlab.grid.network import NetworkModelGrid
 from landlab.io import read_shapefile
@@ -92,7 +93,7 @@ def synthetic():
     )
     timesteps = 2  # total number of timesteps
     dt = 60 * 60 * 24 * 1  # length of timestep (seconds)
-    for t in range(0, (timesteps * dt), dt):
+    for _ in range(0, (timesteps * dt), dt):
         nst1.run_one_step(dt)
 
     return nst1
@@ -182,7 +183,7 @@ def methow():
     )
     timesteps = 2  # total number of timesteps
     dt = 60 * 60 * 24 * 1  # length of timestep (seconds)
-    for t in range(0, (timesteps * dt), dt):
+    for _ in range(0, (timesteps * dt), dt):
         nst2.run_one_step(dt)
 
     return nst2
