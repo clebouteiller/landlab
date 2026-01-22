@@ -20,7 +20,7 @@ from landlab.grid.nodestatus import NodeStatus
 from .cfuncs import non_local_depo
 
 
-class NonlocalDiffuser(Component):
+class NonLocalDiffuser(Component):
     r"""Non local diffusion.
 
     #TODO
